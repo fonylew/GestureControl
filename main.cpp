@@ -225,7 +225,7 @@ void showWindows(MyImage m){
 		channels.push_back(m.bw);
 	merge(channels,result);
 	result.copyTo( m.src(roi));
-	imshow("img1",m.src);
+	imshow("GestureControl",m.src);
 }
 
 int findBiggestContour(vector<vector<Point> > contours){
@@ -311,26 +311,26 @@ void makeContours(MyImage *m, HandGesture* hg){
 }
 
 //Windows Key
-//INPUT ip;
-//void init2(){
-//    ip.type = INPUT_KEYBOARD;
-//    ip.ki.wScan = 0; // hardware scan code for key
-//    ip.ki.time = 0;
-//    ip.ki.dwExtraInfo = 0;
-//}
-//void press(int code){
-//    // Press the "A" key
-//    ip.ki.wVk = code; // virtual-key code for the "a" key
-//    ip.ki.dwFlags = 0; // 0 for key press
-//    SendInput(1, &ip, sizeof(INPUT));
-//
-//    // Release the "A" key
-//    ip.ki.dwFlags = KEYEVENTF_KEYUP; // KEYEVENTF_KEYUP for key release
-//    SendInput(1, &ip, sizeof(INPUT));
-//}
+INPUT ip;
+void initWindowsKey(){
+    ip.type = INPUT_KEYBOARD;
+    ip.ki.wScan = 0; // hardware scan code for key
+    ip.ki.time = 0;
+    ip.ki.dwExtraInfo = 0;
+}
+void press(int code){
+    // Press the "A" key
+    ip.ki.wVk = code; // virtual-key code for the "a" key
+    ip.ki.dwFlags = 0; // 0 for key press
+    SendInput(1, &ip, sizeof(INPUT));
+
+    // Release the "A" key
+    ip.ki.dwFlags = KEYEVENTF_KEYUP; // KEYEVENTF_KEYUP for key release
+    SendInput(1, &ip, sizeof(INPUT));
+}
 
 int main(){
-//    init2();
+    initWindowsKey();
 //    cout<<"Windows Virtual Key API Tester"<<endl;
 //    cout<<"Press a) for Volume UP"<<endl;
 //    cout<<"Press s) for Volume DOWN"<<endl;
@@ -351,7 +351,7 @@ int main(){
 	destroyWindow("img1");
 	initWindows(m);
 	initTrackbars();
-	for(;;){
+	while(true){
 		hg.frameNumber++;
 		m.cap >> m.src;
 		flip(m.src,m.src,1);

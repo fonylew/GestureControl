@@ -46,6 +46,7 @@ struct ctx {
 	int		num_defects;
 };
 VideoCapture capture;
+Mat captureFrameOriginal;
 void init_capture(struct ctx *ctx)
 {
 //	ctx->capture = cvCaptureFromCAM(CV_CAP_ANY);
@@ -54,6 +55,8 @@ void init_capture(struct ctx *ctx)
         cout << "Failed" << endl;
         exit(1);
     }
+    capture >> captureFrameOriginal;
+    ctx->image = new IplImage(captureFrameOriginal);
 //	if (!ctx->capture) {
 //		fprintf(stderr, "Error initializing capture\n");
 //		exit(1);
@@ -305,17 +308,20 @@ int main(int argc, char **argv)
 
 	do {
         capture >> captureFrameOriginal;
-		ctx.image = Mat(captureFrameOriginal.rows,captureFrameOriginal.cols,CV_8UC3);
+        if(captureFrameOriginal.data) {
+            ctx.image = new IplImage(captureFrameOriginal);
+            //ctx.image = Mat(captureFrameOriginal.rows,captureFrameOriginal.cols,CV_8UC3);
 
-		filter_and_threshold(&ctx);
-		find_contour(&ctx);
-		find_convex_hull(&ctx);
-		find_fingers(&ctx);
+            filter_and_threshold(&ctx);
+            find_contour(&ctx);
+            find_convex_hull(&ctx);
+            find_fingers(&ctx);
 
-		display(&ctx);
-		cvWriteFrame(ctx.writer, ctx.image);
+            display(&ctx);
+            cvWriteFrame(ctx.writer, ctx.image);
 
-		key = cvWaitKey(1);
+            key = cvWaitKey(1);
+        }
 	} while (key != 'q');
 
 	return 0;

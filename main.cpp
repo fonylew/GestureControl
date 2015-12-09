@@ -1,5 +1,5 @@
 #include <stdio.h>
-
+#include <opencv2/opencv.hpp>
 #include <opencv2/imgproc/imgproc_c.h>
 #include <opencv2/highgui/highgui_c.h>
 
@@ -15,8 +15,10 @@
 #define PURPLE  CV_RGB(255, 0, 255)
 #define GREY    CV_RGB(200, 200, 200)
 
+using namespace std;
+using namespace cv;
+
 struct ctx {
-	VideoCapture *capture;
 //	CvCapture	*capture;	/* Capture handle */
 	CvVideoWriter	*writer;	/* File recording handle */
 
@@ -43,14 +45,14 @@ struct ctx {
 	int		hand_radius;
 	int		num_defects;
 };
-
+VideoCapture capture;
 void init_capture(struct ctx *ctx)
 {
 //	ctx->capture = cvCaptureFromCAM(CV_CAP_ANY);
-	ctx->capture = VideoCapture(-1);
-	if(!cap.isOpened()) {
+	capture = VideoCapture(0);
+	if(!capture.isOpened()) {
         cout << "Failed" << endl;
-        return -1;
+        exit(1);
     }
 //	if (!ctx->capture) {
 //		fprintf(stderr, "Error initializing capture\n");
@@ -59,25 +61,25 @@ void init_capture(struct ctx *ctx)
 //	ctx->image = cvQueryFrame(ctx->capture);
 }
 
-void init_recording(struct ctx *ctx)
-{
-	int fps, width, height;
-
-	fps = cvGetCaptureProperty(ctx->capture, CV_CAP_PROP_FPS);
-	width = cvGetCaptureProperty(ctx->capture, CV_CAP_PROP_FRAME_WIDTH);
-	height = cvGetCaptureProperty(ctx->capture, CV_CAP_PROP_FRAME_HEIGHT);
-
-	if (fps < 0)
-		fps = 10;
-
-	ctx->writer = cvCreateVideoWriter(VIDEO_FILE, VIDEO_FORMAT, fps,
-					  cvSize(width, height), 1);
-
-	if (!ctx->writer) {
-		fprintf(stderr, "Error initializing video writer\n");
-		exit(1);
-	}
-}
+//void init_recording(struct ctx *ctx)
+//{
+//	double fps, width, height;
+//
+//	fps = cvGetCaptureProperty(capture, CV_CAP_PROP_FPS);
+//	width = cvGetCaptureProperty(capture, CV_CAP_PROP_FRAME_WIDTH);
+//	height = cvGetCaptureProperty(capture, CV_CAP_PROP_FRAME_HEIGHT);
+//
+//	if (fps < 0)
+//		fps = 10;
+//
+//	ctx->writer = cvCreateVideoWriter(VIDEO_FILE, VIDEO_FORMAT, fps,
+//					  cvSize(width, height), 1);
+//
+//	if (!ctx->writer) {
+//		fprintf(stderr, "Error initializing video writer\n");
+//		exit(1);
+//	}
+//}
 
 void init_windows(void)
 {
@@ -297,12 +299,12 @@ int main(int argc, char **argv)
 	int key;
 
 	init_capture(&ctx);
-	init_recording(&ctx);
+	//init_recording(&ctx);
 	init_windows();
 	init_ctx(&ctx);
 
 	do {
-        ctx.capture >> captureFrameOriginal;
+        capture >> captureFrameOriginal;
 		ctx.image = Mat(captureFrameOriginal.rows,captureFrameOriginal.cols,CV_8UC3);
 
 		filter_and_threshold(&ctx);

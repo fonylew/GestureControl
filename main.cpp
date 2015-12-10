@@ -1029,12 +1029,14 @@ void initialize_color_dark() {
 }
 
 void auto_initialize_color_hand(){
-    maxb.push_back(Vec3b(179,63,244));
-    minb.push_back(Vec3b(0,34,141));
-    maxb.push_back(Vec3b(179,91,204));
-    minb.push_back(Vec3b(147,35,97));
-    maxb.push_back(Vec3b(179,51,255));
-    minb.push_back(Vec3b(0,0,198));
+
+    //for Ong's room light condition
+//    maxb.push_back(Vec3b(179,63,244));
+//    minb.push_back(Vec3b(0,34,141));
+//    maxb.push_back(Vec3b(179,91,204));
+//    minb.push_back(Vec3b(147,35,97));
+//    maxb.push_back(Vec3b(179,51,255));
+//    minb.push_back(Vec3b(0,0,198));
 }
 
 float getFingerAngle(pair<Point,Point> fingerPos){
@@ -1055,6 +1057,39 @@ float getAvgFingersAngle(int fingerCount, vector<pair<Point,Point>> fingersPos){
         weightSum+=pointLength(fingersPos[i]);
     }
     return angle/weightSum;
+}
+
+void clearOtherFnFrameCount(int fnFrameCounter[], int fnNum){
+    for(int i=0; i<8; i++){
+        if(i==fnNum) continue;
+        else fnFrameCounter[i] = 0;
+    }
+}
+
+void triggerFunction(int fnNum){
+    //implement actual function here
+    switch(fnNum){
+    default:
+        cout << "function " << fnNum << " triggered" << endl;
+        break;
+    }
+}
+
+void checkFnTrigger(int fnFrameCounter[], int fnNum){
+    //adjust number of frame to count before trigger function
+    int frameCountRequireToTrigger[] = {1,1,1,1,10,10,1,1};
+    if(fnFrameCounter[fnNum] >= frameCountRequireToTrigger[fnNum]){
+        fnFrameCounter[fnNum] = 0;
+        triggerFunction(fnNum);
+    }
+}
+
+//call this when the frame meets the required condition
+void countFnFrame(int fnFrameCounter[], int fnNum){
+    clearOtherFnFrameCount(fnFrameCounter, fnNum);
+    int temp = fnFrameCounter[fnNum];
+    fnFrameCounter[fnNum] = temp+1;
+    checkFnTrigger(fnFrameCounter, fnNum);
 }
 
 int main() {
@@ -1102,6 +1137,8 @@ int main() {
 //
 //    /*-------- frame rate */
 
+    int fnFrameCounter[7] = {0,0,0,0,0,0,0};
+
     while(true) {
         cap >> captureFrameOriginal;
         captureFrame = Mat(captureFrameOriginal.rows,captureFrameOriginal.cols,CV_8UC3);
@@ -1141,6 +1178,7 @@ int main() {
                 circle(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,4, tip*0.8, 5);
             }
             if(outputHandPos.size()==5){
+                //show average angle
                 float avgAngle = getAvgFingersAngle(5, outputHandPos);
                 putText	(
                     shownCaptureFrame,
@@ -1151,6 +1189,7 @@ int main() {
                     Scalar(255,255,255)
                 );
 
+                //show angle for each finger
                 float fingerAngle;
                 for(int i=0; i<5; i++){
                     fingerAngle = getFingerAngle(outputHandPos[i]);
@@ -1163,6 +1202,18 @@ int main() {
                         Scalar(255,255,255)
                     );
                 }
+
+                if(avgAngle > 60) countFnFrame(fnFrameCounter, 4);
+                else if(avgAngle < -30) countFnFrame(fnFrameCounter, 5);
+
+                putText	(
+                    shownCaptureFrame,
+                    "fn4: "+to_string(fnFrameCounter[4])+" | fn5: "+to_string(fnFrameCounter[5]),
+                    Point((int)shownCaptureFrame.cols/2, (int)shownCaptureFrame.rows*0.2),
+                    FONT_HERSHEY_PLAIN,
+                    1,
+                    Scalar(255,255,255)
+                );
             }
 
             imshow("Webcam", shownCaptureFrame);

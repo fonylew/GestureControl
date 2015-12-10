@@ -1,6 +1,7 @@
 #include <iostream>
 #include <opencv2/opencv.hpp>
 #include <queue>
+#include <time.h>
 #define M_PI    3.14159265358979323846
 
 using namespace std;
@@ -1032,6 +1033,7 @@ void auto_initialize_color_hand(){
 }
 
 int main() {
+    int full_screen_count=0;
 
     initialize_color();
 
@@ -1043,6 +1045,37 @@ int main() {
     namedWindow("Webcam");
     namedWindow("Output");
     setMouseCallback("Webcam", myMouseCallback, NULL);
+
+    /* Frame Rate */
+    //double fps = cap.get(CV_CAP_PROP_FPS);
+    // If you do not care about backward compatibility
+    // You can use the following instead for OpenCV 3
+     double fps = cap.get(CAP_PROP_FPS);
+    cout << "Frames per second using cap.get(CV_CAP_PROP_FPS) : " << fps << endl;
+    // Number of frames to capture
+    int num_frames = 120;
+    // Start and end times
+    time_t start, end;
+    // Variable for storing video frames
+    Mat frame;
+    cout << "Capturing " << num_frames << " frames" << endl ;
+    // Start time
+    time(&start);
+    // Grab a few frames
+    for(int i = 0; i < num_frames; i++){
+        cap >> frame;
+    }
+    // End Time
+    time(&end);
+    // Time elapsed
+    double seconds = difftime (end, start);
+    cout << "Time taken : " << seconds << " seconds" << endl;
+    // Calculate frames per second
+    fps  = num_frames / seconds;
+    cout << "Estimated frames per second : " << fps << endl;
+
+    /*-------- frame rate */
+
     while(true) {
         cap >> captureFrameOriginal;
         captureFrame = Mat(captureFrameOriginal.rows,captureFrameOriginal.cols,CV_8UC3);
@@ -1066,9 +1099,10 @@ int main() {
                     shownCaptureFrame.at<Vec3b>(i,cpos[1]) = Vec3b(255,255,255);
                 }
             }
-            for(int i=0; i<bounds.size(); i++) {
-                //rectangle(shownCaptureFrame,Rect(bounds[i].first,bounds[i].second),colors[i],3);
-            }
+            //for(int i=0; i<bounds.size(); i++) {
+            //    rectangle(shownCaptureFrame,Rect(bounds[i].first,bounds[i].second),colors[i],3);
+            //}
+
             circle(shownCaptureFrame,bigOutputSkeletonPos.first+bigOutputPos,1,Scalar(100,0,0),10);
             Vec3b fingerColors[] = {Vec3b(235,0,200),Vec3b(255,100,0),Vec3b(0,200,0),Vec3b(0,180,200),Vec3b(0,50,220)};
             for(int i=0;i<outputHandPos.size();i++){
@@ -1077,6 +1111,7 @@ int main() {
                 circle(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,4,fingerColors[i]*0.8,5);
             }
             imshow("Webcam", shownCaptureFrame);
+
             Mat output = Mat(captureFrame.rows, captureFrame.cols, CV_8UC3);
             for(int i=0; i<output.rows; i++) {
                 for(int j=0; j<output.cols; j++) {

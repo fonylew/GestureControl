@@ -1029,13 +1029,39 @@ void initialize_color_dark() {
 }
 
 void auto_initialize_color_hand(){
+    maxb.push_back(Vec3b(179,63,244));
+    minb.push_back(Vec3b(0,34,141));
+    maxb.push_back(Vec3b(179,91,204));
+    minb.push_back(Vec3b(147,35,97));
+    maxb.push_back(Vec3b(179,51,255));
+    minb.push_back(Vec3b(0,0,198));
+}
 
+float getFingerAngle(pair<Point,Point> fingerPos){
+    int baseX, baseY, tipX, tipY;
+    tipX = fingerPos.first.x;
+    tipY = fingerPos.first.y;
+    baseX = fingerPos.second.x;
+    baseY = fingerPos.second.y;
+    return atan2(tipY-baseY,tipX-baseX) * 180 / M_PI + 90;
+}
+
+float getAvgFingersAngle(int fingerCount, vector<pair<Point,Point>> fingersPos){
+    if(fingerCount==0) return 0;
+    float angle = 0;
+    float weightSum = 0;
+    for(int i=0; i<fingerCount; i++){
+        angle+=getFingerAngle(fingersPos[i]) * pointLength(fingersPos[i]);
+        weightSum+=pointLength(fingersPos[i]);
+    }
+    return angle/weightSum;
 }
 
 int main() {
     int full_screen_count=0;
 
     initialize_color();
+    auto_initialize_color_hand();
 
     VideoCapture cap = VideoCapture(0);
     if(!cap.isOpened()) {
@@ -1046,35 +1072,35 @@ int main() {
     namedWindow("Output");
     setMouseCallback("Webcam", myMouseCallback, NULL);
 
-    /* Frame Rate */
-    //double fps = cap.get(CV_CAP_PROP_FPS);
-    // If you do not care about backward compatibility
-    // You can use the following instead for OpenCV 3
-     double fps = cap.get(CAP_PROP_FPS);
-    cout << "Frames per second using cap.get(CV_CAP_PROP_FPS) : " << fps << endl;
-    // Number of frames to capture
-    int num_frames = 120;
-    // Start and end times
-    time_t start, end;
-    // Variable for storing video frames
-    Mat frame;
-    cout << "Capturing " << num_frames << " frames" << endl ;
-    // Start time
-    time(&start);
-    // Grab a few frames
-    for(int i = 0; i < num_frames; i++){
-        cap >> frame;
-    }
-    // End Time
-    time(&end);
-    // Time elapsed
-    double seconds = difftime (end, start);
-    cout << "Time taken : " << seconds << " seconds" << endl;
-    // Calculate frames per second
-    fps  = num_frames / seconds;
-    cout << "Estimated frames per second : " << fps << endl;
-
-    /*-------- frame rate */
+//    /* Frame Rate */
+//    //double fps = cap.get(CV_CAP_PROP_FPS);
+//    // If you do not care about backward compatibility
+//    // You can use the following instead for OpenCV 3
+//     double fps = cap.get(CAP_PROP_FPS);
+//    cout << "Frames per second using cap.get(CV_CAP_PROP_FPS) : " << fps << endl;
+//    // Number of frames to capture
+//    int num_frames = 120;
+//    // Start and end times
+//    time_t start, end;
+//    // Variable for storing video frames
+//    Mat frame;
+//    cout << "Capturing " << num_frames << " frames" << endl ;
+//    // Start time
+//    time(&start);
+//    // Grab a few frames
+//    for(int i = 0; i < num_frames; i++){
+//        cap >> frame;
+//    }
+//    // End Time
+//    time(&end);
+//    // Time elapsed
+//    double seconds = difftime (end, start);
+//    cout << "Time taken : " << seconds << " seconds" << endl;
+//    // Calculate frames per second
+//    fps  = num_frames / seconds;
+//    cout << "Estimated frames per second : " << fps << endl;
+//
+//    /*-------- frame rate */
 
     while(true) {
         cap >> captureFrameOriginal;
@@ -1087,7 +1113,7 @@ int main() {
             }
             captureFrameOriginal = captureFrame.clone();
             resize(captureFrame,captureFrame,Size(320,240));
-            cvtColor(captureFrame,captureFrameHSV,CV_RGB2HSV);
+            cvtColor(captureFrame,captureFrameHSV,CV_RGB2HSV);http://droidsans.com/tim-cook-explain-the-need-of-battery-case-no-comment-on-design
             shownCaptureFrame = captureFrameOriginal.clone();
             if(pos[0] > -1 && pos[1] > -1) {
                 for(int i=pos[1]; i<cpos[1]; i++) {
@@ -1105,11 +1131,40 @@ int main() {
 
             circle(shownCaptureFrame,bigOutputSkeletonPos.first+bigOutputPos,1,Scalar(100,0,0),10);
             Vec3b fingerColors[] = {Vec3b(235,0,200),Vec3b(255,100,0),Vec3b(0,200,0),Vec3b(0,180,200),Vec3b(0,50,220)};
+            Vec3b white = Vec3b(255,255,255);
+            Vec3b tip = Vec3b(235,0,200);
+            Vec3b base = Vec3b(255,100,0);
+
             for(int i=0;i<outputHandPos.size();i++){
-                circle(shownCaptureFrame,outputHandPos[i].second+bigOutputPos,4,fingerColors[i]*0.6,5);
-                line(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,outputHandPos[i].second+bigOutputPos,fingerColors[i],5);
-                circle(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,4,fingerColors[i]*0.8,5);
+                circle(shownCaptureFrame,outputHandPos[i].second+bigOutputPos,4, base*0.8, 5);
+                line(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,outputHandPos[i].second+bigOutputPos, white*0.8, 5);
+                circle(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,4, tip*0.8, 5);
             }
+            if(outputHandPos.size()==5){
+                float avgAngle = getAvgFingersAngle(5, outputHandPos);
+                putText	(
+                    shownCaptureFrame,
+                    "angle: "+to_string(avgAngle),
+                    Point((int)shownCaptureFrame.cols/2, (int)shownCaptureFrame.rows*0.1),
+                    FONT_HERSHEY_PLAIN,
+                    1,
+                    Scalar(255,255,255)
+                );
+
+                float fingerAngle;
+                for(int i=0; i<5; i++){
+                    fingerAngle = getFingerAngle(outputHandPos[i]);
+                    putText	(
+                        shownCaptureFrame,
+                        to_string(fingerAngle),
+                        outputHandPos[i].first+bigOutputPos,
+                        FONT_HERSHEY_PLAIN,
+                        1,
+                        Scalar(255,255,255)
+                    );
+                }
+            }
+
             imshow("Webcam", shownCaptureFrame);
 
             Mat output = Mat(captureFrame.rows, captureFrame.cols, CV_8UC3);
@@ -1167,7 +1222,10 @@ int main() {
             //resize(bigOutput,bigOutput,Size(bigOutput.cols*2,bigOutput.rows*2));
             resize(bigOutputSkeleton,bigOutputSkeleton,Size(bigOutputSkeleton.cols*2,bigOutputSkeleton.rows*2));
             imshow("Output", bigOutputSkeleton);
-            if(waitKey(5) == 27) exit(0);
+            if(waitKey(5) == 27) {
+                exit(0);
+                break;
+            }
             if(waitKey(5) == 13) {
                 maxb.clear();
                 minb.clear();

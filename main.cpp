@@ -1134,7 +1134,7 @@ float getAvgFingersAngleByIndex(int startIndex, int endIndex, vector<pair<Point,
 
 float getAvgFingersAngle(int fingerCount, vector<pair<Point,Point>> fingersPos){
     if(fingerCount==0) return 0;
-    //store index of longest fingercount fingerpos
+    //sort
     float maxi[5];
     for(int j = 0;j<5;j++){
         maxi[j] = pointLength(fingersPos[j]);
@@ -1154,7 +1154,6 @@ float getAvgFingersAngle(int fingerCount, vector<pair<Point,Point>> fingersPos){
         angle+=getFingerAngle(fingersPos[i]) * pointLength(fingersPos[i]);
         weightSum+=pointLength(fingersPos[i]);
     }
-    //cout<<angle/weightSum<<endl;
     return angle/weightSum;
 }
 
@@ -1168,6 +1167,7 @@ void clearOtherFnFrameCount(int fnNum){
 void triggerFunction(int fnNum){
     //implement actual function here
     switch(fnNum){
+<<<<<<< HEAD
         case 0:
             //Play/Pause
             cout<<"Play/Pause"<<endl;
@@ -1175,6 +1175,13 @@ void triggerFunction(int fnNum){
         case 1:
             //Mute/Unmute
             cout<<"Mute/Unmute"<<endl;
+=======
+        case 2:
+            cout<<"next"<<endl;
+            break;
+        case 3:
+            cout<<"prevoius"<<endl;
+>>>>>>> 1617ee2b4d961809de29e3311cefd6b336c4b940
             break;
         case 6:
             //fullscreen
@@ -1199,7 +1206,11 @@ void triggerFunction(int fnNum){
 void checkFnTrigger(int fnNum){
     //adjust number of frame to count before trigger function
 
+<<<<<<< HEAD
     int frameCountRequireToTrigger[] = {10,10,1,1,10,10,15,15,10}; //last index of array is standby post
+=======
+    int frameCountRequireToTrigger[] = {15,15,15,15,10,10,15,15,15}; //last index of array is standby post
+>>>>>>> 1617ee2b4d961809de29e3311cefd6b336c4b940
     if(fnFrameCounter[fnNum] >= frameCountRequireToTrigger[fnNum]){
         fnFrameCounter[fnNum] = 0;
         triggerFunction(fnNum);
@@ -1213,34 +1224,6 @@ void countFnFrame(int fnNum){
     fnFrameCounter[fnNum] = temp+1;
     checkFnTrigger(fnNum);
 }
-
-//to count function frame
-//queue<int> fingerq;
-//int fnFrameCount[6];
-//int k = 0;
-//int maxFrameNumber = 30;
-//
-//void countFingerFrame(){
-//    if(k>=maxFrameNumber){
-//        int imaxxx = 0;
-//        for(int i = 0;i<6;i++){
-//            if(fnFrameCount[i]>fnFrameCount[imaxxx])imaxxx=i;
-//        }
-//        k = 0;
-//        while(!fingerq.empty())fingerq.pop();
-//        for(int i =0;i<6;i++){
-//            fnFrameCount[i]=0;
-//        }
-//        cout<<"finger number: "<<imaxxx<<endl;
-//        //triggerFunction(i);
-//    }
-//}
-//void increaseFnFrame(int fnNumber){
-//    fnFrameCount[fnNumber]++;
-//    fingerq.push(real_finger_count);
-//    k++;
-//    countFingerFrame();
-//}
 
 int main() {
     initWindowsKey();
@@ -1311,11 +1294,9 @@ int main() {
             }
             //finger_count
             if (real_finger_count==2) {
-                float avgAng = getAvgFingersAngle(3,outputHandPos);
-                if(avgAng>45&&avgAng<90){
-                    increaseFnFrame(3);
-                }
-                if(avgAng<-45&&avgAng>-90)increaseFnFrame(4);
+                float avgAng = getAvgFingersAngle(2,outputHandPos);
+                if(avgAng>45&&avgAng<90)countFnFrame(2);
+                if(avgAng<-45&&avgAng>-90)countFnFrame(3);
             }
 
             if (real_finger_count==3) {

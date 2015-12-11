@@ -1164,7 +1164,7 @@ void clearOtherFnFrameCount(int fnNum){
     }
 }
 
-<<<<<<< HEAD
+
 void clearAllFnFrameCount(){
     for(int i=0; i<8; i++)
         fnFrameCounter[i] = 0;
@@ -1172,8 +1172,6 @@ void clearAllFnFrameCount(){
 
 int error_count = 0;
 
-=======
->>>>>>> cd543fc39451fe315c704a18b91c899f1f0ac35d
 void triggerFunction(int fnNum){
     //implement actual function here
     switch(fnNum){
@@ -1194,11 +1192,8 @@ void triggerFunction(int fnNum){
         case 6:
             //fullscreen
             cout<<"-----full screen"<<endl;
-<<<<<<< HEAD
             clearAllFnFrameCount();
             error_count = 0;
-=======
->>>>>>> cd543fc39451fe315c704a18b91c899f1f0ac35d
             break;
         case 7:
             //exit fullscreen
@@ -1219,12 +1214,7 @@ void triggerFunction(int fnNum){
 
 void checkFnTrigger(int fnNum){
     //adjust number of frame to count before trigger function
-<<<<<<< HEAD
-
-    int frameCountRequireToTrigger[] = {15,15,1,1,10,10,10,10,15}; //last index of array is standby post
-=======
     int frameCountRequireToTrigger[] = {10,10,15,15,10,10,15,15,10}; //last index of array is standby post
->>>>>>> cd543fc39451fe315c704a18b91c899f1f0ac35d
     if(fnFrameCounter[fnNum] >= frameCountRequireToTrigger[fnNum]){
         fnFrameCounter[fnNum] = 0;
         triggerFunction(fnNum);
@@ -1363,8 +1353,8 @@ int main() {
                 //-----------
                 //cout<<lastSkeletonPos.y-bigOutputSkeletonPos.first.y<<" ";
                 //use palm position
-<<<<<<< HEAD
-                if(abs(lastSkeletonPos.x-bigOutputSkeletonPos.first.x) <= 170){
+
+                if(abs(lastSkeletonPos.x-bigOutputSkeletonPos.first.x) <= 170
                 && lastSkeletonPos.y-bigOutputSkeletonPos.first.y>89){
                     countFnFrame(6);
                     //cout<<abs(lastSkeletonPos.x-bigOutputSkeletonPos.first.x)<<" ";
@@ -1377,19 +1367,8 @@ int main() {
                         //clearAllFnFrameCount();
                         error_count = 0;
                         //cout<<"X";
-=======
-                if(abs(lastSkeletonPos.x-bigOutputSkeletonPos.first.x) < 50
-                && bigOutputSkeletonPos.first.y-lastSkeletonPos.y>20){
-                    countFnFrame(6);
-                    cout<<".";
-                }else{
-                    error++;
-                    if(error>20){
-                        fnFrameCounter[6] = 0;
-                        error = 0;
->>>>>>> cd543fc39451fe315c704a18b91c899f1f0ac35d
                     }
-                    cout<<"  ";
+                    //cout<<"  ";
                 }
             }
             /*- Last Frame -*/

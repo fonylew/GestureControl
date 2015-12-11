@@ -1098,7 +1098,7 @@ void press(int code){
     SendInput(1, &ip, sizeof(INPUT));
 }
 
-int fnFrameCounter[8] = {0,0,0,0,0,0,0,0};
+int fnFrameCounter[] = {0,0,0,0,0,0,0,0,0};
 
 float getFingerAngle(pair<Point,Point> fingerPos){
     int baseX, baseY, tipX, tipY;
@@ -1130,7 +1130,15 @@ void clearOtherFnFrameCount(int fnNum){
 void triggerFunction(int fnNum){
     //implement actual function here
     switch(fnNum){
+        case 6:
+            //fullscreen
+            cout<<"-----full screen"<<endl;
+            break;
         case 7:
+            //exit fullscreen
+            break;
+        case 8:
+            //standby
             fnFrameCounter[0] = 0;
             fnFrameCounter[1] = 0;
             break;
@@ -1143,7 +1151,7 @@ void triggerFunction(int fnNum){
 void checkFnTrigger(int fnNum){
     //adjust number of frame to count before trigger function
 
-    int frameCountRequireToTrigger[] = {15,15,1,1,10,10,1,1,15}; //last index of array is standby post
+    int frameCountRequireToTrigger[] = {15,15,1,1,10,10,40,40,15}; //last index of array is standby post
     if(fnFrameCounter[fnNum] >= frameCountRequireToTrigger[fnNum]){
         fnFrameCounter[fnNum] = 0;
         triggerFunction(fnNum);
@@ -1174,7 +1182,9 @@ int main() {
 
     //calculateFPS();
 
-
+    //last frame variable
+    Point lastSkeletonPos;
+    vector<pair<Point,Point>> lastHandPos;
 
     while(true) {
         cap >> captureFrameOriginal;
@@ -1231,7 +1241,7 @@ int main() {
             }
 
             if (real_finger_count==5) {
-                countFnFrame(7);
+                countFnFrame(8);
                 //show average angle
                 float avgAngle = getAvgFingersAngle(5, outputHandPos);
                 putText	(
@@ -1268,8 +1278,25 @@ int main() {
                     1,
                     Scalar(255,255,255)
                 );
+                //-----------
+                //use palm position
+                if(abs(lastSkeletonPos.x-bigOutputSkeletonPos.first.x) < 50
+                && bigOutputSkeletonPos.first.y>lastSkeletonPos.y + 20){
+                    countFnFrame(6);
+                    cout<<".";
+                }else{
+                    fnFrameCounter[6]=0;
+                    cout<<"  ";
+                }
             }
-
+            /*- Last Frame -*/
+            lastSkeletonPos = bigOutputSkeletonPos.first+bigOutputPos;
+            lastHandPos = outputHandPos;
+            for(int i=0;i<lastHandPos.size();i++){
+                lastHandPos[i].first += bigOutputPos;
+                lastHandPos[i].second += bigOutputPos;
+            }
+            /*--------------*/
             imshow("Webcam", shownCaptureFrame);
 
             Mat output = Mat(captureFrame.rows, captureFrame.cols, CV_8UC3);

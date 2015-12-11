@@ -295,10 +295,12 @@
 1438595826 c:\opencv3\build\include\opencv2\highgui\highgui.hpp
 	"opencv2/highgui.hpp"
 
-1449753202 source:d:\dropbox\cpcu\cp4-1\com vision\code\windowskey\main.cpp
+1449812450 source:d:\dropbox\cpcu\cp4-1\com vision\code\windowskey\main.cpp
+	<windows.h>
 	<iostream>
 	<opencv2/opencv.hpp>
 	<queue>
+	<time.h>
 
 1449620387 source:c:\users\violinisms\desktop\gesturecontrol\handgesture.cpp
 	"handGesture.hpp"

@@ -1059,7 +1059,7 @@ void auto_initialize_color_hand(){
 //    minb.push_back(Vec3b(0,0,198));
 }
 
-VideoCapture cap = VideoCapture(1);
+VideoCapture cap = VideoCapture(0);
 double fps;
 
 void calculateFPS(){
@@ -1323,7 +1323,7 @@ int main() {
                     cout<<fnFrameCounter[6];
                 }else{
                     error++;
-                    if(error>20){
+                    if(error>10){
                         clearAllFnFrameCount();
                         error = 0;
                         cout<<"X";

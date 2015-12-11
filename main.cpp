@@ -1122,9 +1122,19 @@ float getFingerAngle(pair<Point,Point> fingerPos){
     return atan2(tipY-baseY,tipX-baseX) * 180 / M_PI + 90;
 }
 
+float getAvgFingersAngleByIndex(int startIndex, int endIndex, vector<pair<Point,Point>> fingersPos) {
+    float angle = 0;
+    float weightSum = 0;
+    for(int i=startIndex; i<=endIndex; i++){
+        angle+=getFingerAngle(fingersPos[i]) * pointLength(fingersPos[i]);
+        weightSum+=pointLength(fingersPos[i]);
+    }
+    return angle/weightSum;
+}
+
 float getAvgFingersAngle(int fingerCount, vector<pair<Point,Point>> fingersPos){
     if(fingerCount==0) return 0;
-    //store index of longest fingercount fingerpos
+    //sort
     float maxi[5];
     for(int j = 0;j<5;j++){
         maxi[j] = pointLength(fingersPos[j]);
@@ -1138,14 +1148,12 @@ float getAvgFingersAngle(int fingerCount, vector<pair<Point,Point>> fingersPos){
             }
         }
     }
-    //cout<<endl;
     float angle = 0;
     float weightSum = 0;
     for(int i=0; i<fingerCount; i++){
         angle+=getFingerAngle(fingersPos[i]) * pointLength(fingersPos[i]);
         weightSum+=pointLength(fingersPos[i]);
     }
-    //cout<<angle/weightSum<<endl;
     return angle/weightSum;
 }
 
@@ -1156,6 +1164,7 @@ void clearOtherFnFrameCount(int fnNum){
     }
 }
 
+<<<<<<< HEAD
 void clearAllFnFrameCount(){
     for(int i=0; i<8; i++)
         fnFrameCounter[i] = 0;
@@ -1163,14 +1172,33 @@ void clearAllFnFrameCount(){
 
 int error_count = 0;
 
+=======
+>>>>>>> cd543fc39451fe315c704a18b91c899f1f0ac35d
 void triggerFunction(int fnNum){
     //implement actual function here
     switch(fnNum){
+        case 0:
+            //Play/Pause
+            cout<<"Play/Pause"<<endl;
+            break;
+        case 1:
+            //Mute/Unmute
+            cout<<"Mute/Unmute"<<endl;
+            break;
+        case 2:
+            cout<<"next"<<endl;
+            break;
+        case 3:
+            cout<<"prevoius"<<endl;
+            break;
         case 6:
             //fullscreen
             cout<<"-----full screen"<<endl;
+<<<<<<< HEAD
             clearAllFnFrameCount();
             error_count = 0;
+=======
+>>>>>>> cd543fc39451fe315c704a18b91c899f1f0ac35d
             break;
         case 7:
             //exit fullscreen
@@ -1180,6 +1208,8 @@ void triggerFunction(int fnNum){
             //standby
             fnFrameCounter[0] = 0;
             fnFrameCounter[1] = 0;
+            fnFrameCounter[2] = 0;
+            fnFrameCounter[3] = 0;
             break;
         default:
             cout << "function " << fnNum << " triggered" << endl;
@@ -1189,8 +1219,12 @@ void triggerFunction(int fnNum){
 
 void checkFnTrigger(int fnNum){
     //adjust number of frame to count before trigger function
+<<<<<<< HEAD
 
     int frameCountRequireToTrigger[] = {15,15,1,1,10,10,10,10,15}; //last index of array is standby post
+=======
+    int frameCountRequireToTrigger[] = {10,10,15,15,10,10,15,15,10}; //last index of array is standby post
+>>>>>>> cd543fc39451fe315c704a18b91c899f1f0ac35d
     if(fnFrameCounter[fnNum] >= frameCountRequireToTrigger[fnNum]){
         fnFrameCounter[fnNum] = 0;
         triggerFunction(fnNum);
@@ -1224,6 +1258,7 @@ int main() {
     //last frame variable
     Point lastSkeletonPos;
     vector<pair<Point,Point>> lastHandPos;
+
 
     while(true) {
         cap >> captureFrameOriginal;
@@ -1266,24 +1301,31 @@ int main() {
 
             //finger_count
             real_finger_count = 0;
+
             for(int i=0;i<outputHandPos.size();i++){
                 if (cv::norm((outputHandPos[i].first+bigOutputPos)-(outputHandPos[i].second+bigOutputPos)) > 89.0) real_finger_count++;
             }
             //finger_count
+            if (real_finger_count==2) {
+                float avgAng = getAvgFingersAngle(2,outputHandPos);
+                if(avgAng>45&&avgAng<90)countFnFrame(2);
+                if(avgAng<-45&&avgAng>-90)countFnFrame(3);
+            }
 
             if (real_finger_count==3) {
-                float avgAng = getAvgFingersAngle(3,outputHandPos);
-                countFnFrame(1);
+                float angel_temp = getAvgFingersAngleByIndex(1,3,outputHandPos);
+                if (angel_temp > -10 && angel_temp < 10) countFnFrame(1);
             }
 
             if (real_finger_count==4) {
-                countFnFrame(0);
+                float angel_temp = getAvgFingersAngleByIndex(1,4,outputHandPos);
+                if (angel_temp > -10 && angel_temp < 10) countFnFrame(0);
             }
 
             if (real_finger_count==5) {
-                countFnFrame(8);
                 //show average angle
                 float avgAngle = getAvgFingersAngle(5, outputHandPos);
+                if (avgAngle > -10 && avgAngle < 20) countFnFrame(8); // for standby of post 0,1,2,3 don't remove this line!
                 putText	(
                     shownCaptureFrame,
                     "angle: "+to_string(avgAngle),
@@ -1321,6 +1363,7 @@ int main() {
                 //-----------
                 //cout<<lastSkeletonPos.y-bigOutputSkeletonPos.first.y<<" ";
                 //use palm position
+<<<<<<< HEAD
                 if(abs(lastSkeletonPos.x-bigOutputSkeletonPos.first.x) <= 170){
                 && lastSkeletonPos.y-bigOutputSkeletonPos.first.y>89){
                     countFnFrame(6);
@@ -1334,7 +1377,19 @@ int main() {
                         //clearAllFnFrameCount();
                         error_count = 0;
                         //cout<<"X";
+=======
+                if(abs(lastSkeletonPos.x-bigOutputSkeletonPos.first.x) < 50
+                && bigOutputSkeletonPos.first.y-lastSkeletonPos.y>20){
+                    countFnFrame(6);
+                    cout<<".";
+                }else{
+                    error++;
+                    if(error>20){
+                        fnFrameCounter[6] = 0;
+                        error = 0;
+>>>>>>> cd543fc39451fe315c704a18b91c899f1f0ac35d
                     }
+                    cout<<"  ";
                 }
             }
             /*- Last Frame -*/

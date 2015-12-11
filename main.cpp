@@ -1125,20 +1125,18 @@ float getFingerAngle(pair<Point,Point> fingerPos){
 float getAvgFingersAngle(int fingerCount, vector<pair<Point,Point>> fingersPos){
     if(fingerCount==0) return 0;
     //store index of longest fingercount fingerpos
-    int maxi[fingerCount];
-    for(int j = 0;j<fingerCount;j++){
-        maxi[j] = j;
+    float maxi[5];
+    for(int j = 0;j<5;j++){
+        maxi[j] = pointLength(fingersPos[j]);
     }
     for(int i =0;i<5;i++){
-        for(int j = 0;j<fingerCount;j++){
-            if(pointLength(fingersPos[maxi[j]])<pointLength(fingersPos[i])){
-               maxi[j]=i;
-               break;
+        for(int j = i+1;j<5;j++){
+            if(maxi[i]<maxi[j]){
+               float temp1 = maxi[i];
+               maxi[i]=maxi[j];
+               maxi[j] = temp1;
             }
         }
-    }
-    for(int i = 0;i<fingerCount;i++){
-        cout<<maxi[i]<<"   ";
     }
     cout<<endl;
     float angle = 0;
@@ -1147,7 +1145,7 @@ float getAvgFingersAngle(int fingerCount, vector<pair<Point,Point>> fingersPos){
         angle+=getFingerAngle(fingersPos[i]) * pointLength(fingersPos[i]);
         weightSum+=pointLength(fingersPos[i]);
     }
-    //cout<<angle/weightSum<<endl;
+    cout<<angle/weightSum<<endl;
     return angle/weightSum;
 }
 
@@ -1265,12 +1263,12 @@ int main() {
             //finger_count
 
             if (real_finger_count==3) {
-<<<<<<< HEAD
+//<<<<<<< HEAD
                 float avgAng = getAvgFingersAngle(3,outputHandPos);
-                countFnFrame(fnFrameCounter, 1);
-=======
+                //countFnFrame(fnFrameCounter, 1);
+//=======
                 countFnFrame(1);
->>>>>>> bd796b114b9f8cc29ddc48fa4732e7215719c491
+//>>>>>>> bd796b114b9f8cc29ddc48fa4732e7215719c491
             }
 
             if (real_finger_count==4) {

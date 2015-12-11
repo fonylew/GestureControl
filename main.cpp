@@ -1157,10 +1157,10 @@ void clearOtherFnFrameCount(int fnNum){
 void triggerFunction(int fnNum){
     //implement actual function here
     switch(fnNum){
-        case 3:
+        case 2:
             cout<<"next"<<endl;
             break;
-        case 4:
+        case 3:
             cout<<"prevoius"<<endl;
             break;
         case 6:
@@ -1269,8 +1269,8 @@ int main() {
             //finger_count
             if (real_finger_count==2) {
                 float avgAng = getAvgFingersAngle(2,outputHandPos);
-                if(avgAng>45&&avgAng<90)countFnFrame(3);
-                if(avgAng<-45&&avgAng>-90)countFnFrame(4);
+                if(avgAng>45&&avgAng<90)countFnFrame(2);
+                if(avgAng<-45&&avgAng>-90)countFnFrame(3);
             }
 
             if (real_finger_count==3) {

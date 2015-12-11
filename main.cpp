@@ -1085,21 +1085,26 @@ void clearOtherFnFrameCount(int fnFrameCounter[], int fnNum){
     }
 }
 
-void triggerFunction(int fnNum){
+void triggerFunction(int fnFrameCounter[], int fnNum){
     //implement actual function here
     switch(fnNum){
-    default:
-        cout << "function " << fnNum << " triggered" << endl;
-        break;
+        case 7:
+            fnFrameCounter[0] = 0;
+            fnFrameCounter[1] = 0;
+            break;
+        default:
+            cout << "function " << fnNum << " triggered" << endl;
+            break;
     }
 }
 
 void checkFnTrigger(int fnFrameCounter[], int fnNum){
     //adjust number of frame to count before trigger function
-    int frameCountRequireToTrigger[] = {10,10,1,1,10,10,1,1};
+
+    int frameCountRequireToTrigger[] = {15,15,1,1,10,10,1,1,15}; //last index of array is standby post
     if(fnFrameCounter[fnNum] >= frameCountRequireToTrigger[fnNum]){
         fnFrameCounter[fnNum] = 0;
-        triggerFunction(fnNum);
+        triggerFunction(fnFrameCounter, fnNum);
     }
 }
 
@@ -1156,7 +1161,7 @@ int main() {
 //
 //    /*-------- frame rate */
 
-    int fnFrameCounter[7] = {0,0,0,0,0,0,0};
+    int fnFrameCounter[8] = {0,0,0,0,0,0,0,0};
 
     while(true) {
         cap >> captureFrameOriginal;
@@ -1214,6 +1219,7 @@ int main() {
             }
 
             if (real_finger_count==5) {
+                countFnFrame(fnFrameCounter, 7);
                 //show average angle
                 float avgAngle = getAvgFingersAngle(5, outputHandPos);
                 putText	(

@@ -1263,12 +1263,8 @@ int main() {
             //finger_count
 
             if (real_finger_count==3) {
-//<<<<<<< HEAD
                 float avgAng = getAvgFingersAngle(3,outputHandPos);
-                //countFnFrame(fnFrameCounter, 1);
-//=======
                 countFnFrame(1);
-//>>>>>>> bd796b114b9f8cc29ddc48fa4732e7215719c491
             }
 
             if (real_finger_count==4) {

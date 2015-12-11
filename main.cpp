@@ -1070,7 +1070,7 @@ void clearOtherFnFrameCount(int fnFrameCounter[], int fnNum){
 void triggerFunction(int fnFrameCounter[], int fnNum){
     //implement actual function here
     switch(fnNum){
-        case 8:
+        case 7:
             fnFrameCounter[0] = 0;
             fnFrameCounter[1] = 0;
             break;
@@ -1083,7 +1083,7 @@ void triggerFunction(int fnFrameCounter[], int fnNum){
 void checkFnTrigger(int fnFrameCounter[], int fnNum){
     //adjust number of frame to count before trigger function
 
-    int frameCountRequireToTrigger[] = {20,20,1,1,10,10,1,1,20}; //last index of array is standby post
+    int frameCountRequireToTrigger[] = {15,15,1,1,10,10,1,1,15}; //last index of array is standby post
     if(fnFrameCounter[fnNum] >= frameCountRequireToTrigger[fnNum]){
         fnFrameCounter[fnNum] = 0;
         triggerFunction(fnFrameCounter, fnNum);

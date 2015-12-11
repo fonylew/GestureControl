@@ -1,3 +1,9 @@
+#define WINVER 0x0500
+#include <windows.h>
+#ifdef ACCESS_MASK
+#undef ACCESS_MASK
+#endif
+
 #include <iostream>
 #include <opencv2/opencv.hpp>
 #include <queue>
@@ -1040,6 +1046,60 @@ void auto_initialize_color_hand(){
 //    minb.push_back(Vec3b(0,0,198));
 }
 
+VideoCapture cap = VideoCapture(0);
+double fps;
+
+void calculateFPS(){
+    /* Frame Rate */
+    //double fps = cap.get(CV_CAP_PROP_FPS);
+    // If you do not care about backward compatibility
+    // You can use the following instead for OpenCV 3
+    fps = cap.get(CAP_PROP_FPS);
+    cout << "Frames per second using cap.get(CV_CAP_PROP_FPS) : " << fps << endl;
+    // Number of frames to capture
+    int num_frames = 120;
+    // Start and end times
+    time_t start, end;
+    // Variable for storing video frames
+    Mat frame;
+    cout << "Capturing " << num_frames << " frames" << endl ;
+    // Start time
+    time(&start);
+    // Grab a few frames
+    for(int i = 0; i < num_frames; i++){
+        cap >> frame;
+    }
+    // End Time
+    time(&end);
+    // Time elapsed
+    double seconds = difftime (end, start);
+    cout << "Time taken : " << seconds << " seconds" << endl;
+    // Calculate frames per second
+    fps  = num_frames / seconds;
+    cout << "Estimated frames per second : " << fps << endl;
+}
+
+//Windows Key
+INPUT ip;
+void initWindowsKey(){
+    ip.type = INPUT_KEYBOARD;
+    ip.ki.wScan = 0; // hardware scan code for key
+    ip.ki.time = 0;
+    ip.ki.dwExtraInfo = 0;
+}
+void press(int code){
+    // Press the "A" key
+    ip.ki.wVk = code; // virtual-key code for the "a" key
+    ip.ki.dwFlags = 0; // 0 for key press
+    SendInput(1, &ip, sizeof(INPUT));
+
+    // Release the "A" key
+    ip.ki.dwFlags = KEYEVENTF_KEYUP; // KEYEVENTF_KEYUP for key release
+    SendInput(1, &ip, sizeof(INPUT));
+}
+
+int fnFrameCounter[8] = {0,0,0,0,0,0,0,0};
+
 float getFingerAngle(pair<Point,Point> fingerPos){
     int baseX, baseY, tipX, tipY;
     tipX = fingerPos.first.x;
@@ -1060,14 +1120,14 @@ float getAvgFingersAngle(int fingerCount, vector<pair<Point,Point>> fingersPos){
     return angle/weightSum;
 }
 
-void clearOtherFnFrameCount(int fnFrameCounter[], int fnNum){
+void clearOtherFnFrameCount(int fnNum){
     for(int i=0; i<8; i++){
         if(i==fnNum) continue;
         else fnFrameCounter[i] = 0;
     }
 }
 
-void triggerFunction(int fnFrameCounter[], int fnNum){
+void triggerFunction(int fnNum){
     //implement actual function here
     switch(fnNum){
         case 7:
@@ -1080,31 +1140,30 @@ void triggerFunction(int fnFrameCounter[], int fnNum){
     }
 }
 
-void checkFnTrigger(int fnFrameCounter[], int fnNum){
+void checkFnTrigger(int fnNum){
     //adjust number of frame to count before trigger function
 
     int frameCountRequireToTrigger[] = {15,15,1,1,10,10,1,1,15}; //last index of array is standby post
     if(fnFrameCounter[fnNum] >= frameCountRequireToTrigger[fnNum]){
         fnFrameCounter[fnNum] = 0;
-        triggerFunction(fnFrameCounter, fnNum);
+        triggerFunction(fnNum);
     }
 }
 
 //call this when the frame meets the required condition
-void countFnFrame(int fnFrameCounter[], int fnNum){
-    clearOtherFnFrameCount(fnFrameCounter, fnNum);
+void countFnFrame(int fnNum){
+    clearOtherFnFrameCount(fnNum);
     int temp = fnFrameCounter[fnNum];
     fnFrameCounter[fnNum] = temp+1;
-    checkFnTrigger(fnFrameCounter, fnNum);
+    checkFnTrigger(fnNum);
 }
 
 int main() {
-    int full_screen_count=0;
+    initWindowsKey();
 
     initialize_color();
     auto_initialize_color_hand();
 
-    VideoCapture cap = VideoCapture(0);
     if(!cap.isOpened()) {
         cout << "Failed" << endl;
         return -1;
@@ -1113,37 +1172,9 @@ int main() {
     namedWindow("Output");
     setMouseCallback("Webcam", myMouseCallback, NULL);
 
-//    /* Frame Rate */
-//    //double fps = cap.get(CV_CAP_PROP_FPS);
-//    // If you do not care about backward compatibility
-//    // You can use the following instead for OpenCV 3
-//     double fps = cap.get(CAP_PROP_FPS);
-//    cout << "Frames per second using cap.get(CV_CAP_PROP_FPS) : " << fps << endl;
-//    // Number of frames to capture
-//    int num_frames = 120;
-//    // Start and end times
-//    time_t start, end;
-//    // Variable for storing video frames
-//    Mat frame;
-//    cout << "Capturing " << num_frames << " frames" << endl ;
-//    // Start time
-//    time(&start);
-//    // Grab a few frames
-//    for(int i = 0; i < num_frames; i++){
-//        cap >> frame;
-//    }
-//    // End Time
-//    time(&end);
-//    // Time elapsed
-//    double seconds = difftime (end, start);
-//    cout << "Time taken : " << seconds << " seconds" << endl;
-//    // Calculate frames per second
-//    fps  = num_frames / seconds;
-//    cout << "Estimated frames per second : " << fps << endl;
-//
-//    /*-------- frame rate */
+    //calculateFPS();
 
-    int fnFrameCounter[8] = {0,0,0,0,0,0,0,0};
+
 
     while(true) {
         cap >> captureFrameOriginal;
@@ -1192,15 +1223,15 @@ int main() {
             //finger_count
 
             if (real_finger_count==3) {
-                countFnFrame(fnFrameCounter, 1);
+                countFnFrame(1);
             }
 
             if (real_finger_count==4) {
-                countFnFrame(fnFrameCounter, 0);
+                countFnFrame(0);
             }
 
             if (real_finger_count==5) {
-                countFnFrame(fnFrameCounter, 7);
+                countFnFrame(7);
                 //show average angle
                 float avgAngle = getAvgFingersAngle(5, outputHandPos);
                 putText	(
@@ -1226,8 +1257,8 @@ int main() {
                     );
                 }
 
-                if(avgAngle > 60) countFnFrame(fnFrameCounter, 4);
-                else if(avgAngle < -30) countFnFrame(fnFrameCounter, 5);
+                if(avgAngle > 60) countFnFrame(4);
+                else if(avgAngle < -30) countFnFrame(5);
 
                 putText	(
                     shownCaptureFrame,

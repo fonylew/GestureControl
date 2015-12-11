@@ -136,6 +136,7 @@ int pos[] =  {-2,-2};
 int cpos[] =  {-2,-2};
 vector<Vec3b> maxb;
 vector<Vec3b> minb;
+int real_finger_count;
 
 void myMouseCallback(int event, int x, int y, int flags, void* userdata) {
     if(event == EVENT_LBUTTONDOWN) {
@@ -1030,12 +1031,91 @@ void initialize_color_dark() {
 
 void auto_initialize_color_hand(){
 
+    //for Ong's room light condition
+//    maxb.push_back(Vec3b(179,63,244));
+//    minb.push_back(Vec3b(0,34,141));
+//    maxb.push_back(Vec3b(179,91,204));
+//    minb.push_back(Vec3b(147,35,97));
+//    maxb.push_back(Vec3b(179,51,255));
+//    minb.push_back(Vec3b(0,0,198));
+}
+
+float getFingerAngle(pair<Point,Point> fingerPos){
+    int baseX, baseY, tipX, tipY;
+    tipX = fingerPos.first.x;
+    tipY = fingerPos.first.y;
+    baseX = fingerPos.second.x;
+    baseY = fingerPos.second.y;
+    return atan2(tipY-baseY,tipX-baseX) * 180 / M_PI + 90;
+}
+
+float getAvgFingersAngle(int fingerCount, vector<pair<Point,Point>> fingersPos){
+    if(fingerCount==0) return 0;
+    //store index of longest fingercount fingerpos
+    int maxi[fingerCount];
+    for(int j = 0;j<fingerCount;j++){
+        maxi[j] = j;
+    }
+    for(int i =0;i<5;i++){
+        for(int j = 0;j<fingerCount;j++){
+            if(pointLength(fingersPos[maxi[j]])<pointLength(fingersPos[i])){
+               maxi[j]=i;
+               break;
+            }
+        }
+    }
+    for(int i = 0;i<fingerCount;i++){
+        cout<<maxi[i]<<"   ";
+    }
+    cout<<endl;
+    float angle = 0;
+    float weightSum = 0;
+    for(int i=0; i<fingerCount; i++){
+        angle+=getFingerAngle(fingersPos[i]) * pointLength(fingersPos[i]);
+        weightSum+=pointLength(fingersPos[i]);
+    }
+    //cout<<angle/weightSum<<endl;
+    return angle/weightSum;
+}
+
+void clearOtherFnFrameCount(int fnFrameCounter[], int fnNum){
+    for(int i=0; i<8; i++){
+        if(i==fnNum) continue;
+        else fnFrameCounter[i] = 0;
+    }
+}
+
+void triggerFunction(int fnNum){
+    //implement actual function here
+    switch(fnNum){
+    default:
+        cout << "function " << fnNum << " triggered" << endl;
+        break;
+    }
+}
+
+void checkFnTrigger(int fnFrameCounter[], int fnNum){
+    //adjust number of frame to count before trigger function
+    int frameCountRequireToTrigger[] = {10,10,1,1,10,10,1,1};
+    if(fnFrameCounter[fnNum] >= frameCountRequireToTrigger[fnNum]){
+        fnFrameCounter[fnNum] = 0;
+        triggerFunction(fnNum);
+    }
+}
+
+//call this when the frame meets the required condition
+void countFnFrame(int fnFrameCounter[], int fnNum){
+    clearOtherFnFrameCount(fnFrameCounter, fnNum);
+    int temp = fnFrameCounter[fnNum];
+    fnFrameCounter[fnNum] = temp+1;
+    checkFnTrigger(fnFrameCounter, fnNum);
 }
 
 int main() {
     int full_screen_count=0;
 
     initialize_color();
+    auto_initialize_color_hand();
 
     VideoCapture cap = VideoCapture(0);
     if(!cap.isOpened()) {
@@ -1046,35 +1126,37 @@ int main() {
     namedWindow("Output");
     setMouseCallback("Webcam", myMouseCallback, NULL);
 
-    /* Frame Rate */
-    //double fps = cap.get(CV_CAP_PROP_FPS);
-    // If you do not care about backward compatibility
-    // You can use the following instead for OpenCV 3
-     double fps = cap.get(CAP_PROP_FPS);
-    cout << "Frames per second using cap.get(CV_CAP_PROP_FPS) : " << fps << endl;
-    // Number of frames to capture
-    int num_frames = 120;
-    // Start and end times
-    time_t start, end;
-    // Variable for storing video frames
-    Mat frame;
-    cout << "Capturing " << num_frames << " frames" << endl ;
-    // Start time
-    time(&start);
-    // Grab a few frames
-    for(int i = 0; i < num_frames; i++){
-        cap >> frame;
-    }
-    // End Time
-    time(&end);
-    // Time elapsed
-    double seconds = difftime (end, start);
-    cout << "Time taken : " << seconds << " seconds" << endl;
-    // Calculate frames per second
-    fps  = num_frames / seconds;
-    cout << "Estimated frames per second : " << fps << endl;
+//    /* Frame Rate */
+//    //double fps = cap.get(CV_CAP_PROP_FPS);
+//    // If you do not care about backward compatibility
+//    // You can use the following instead for OpenCV 3
+//     double fps = cap.get(CAP_PROP_FPS);
+//    cout << "Frames per second using cap.get(CV_CAP_PROP_FPS) : " << fps << endl;
+//    // Number of frames to capture
+//    int num_frames = 120;
+//    // Start and end times
+//    time_t start, end;
+//    // Variable for storing video frames
+//    Mat frame;
+//    cout << "Capturing " << num_frames << " frames" << endl ;
+//    // Start time
+//    time(&start);
+//    // Grab a few frames
+//    for(int i = 0; i < num_frames; i++){
+//        cap >> frame;
+//    }
+//    // End Time
+//    time(&end);
+//    // Time elapsed
+//    double seconds = difftime (end, start);
+//    cout << "Time taken : " << seconds << " seconds" << endl;
+//    // Calculate frames per second
+//    fps  = num_frames / seconds;
+//    cout << "Estimated frames per second : " << fps << endl;
+//
+//    /*-------- frame rate */
 
-    /*-------- frame rate */
+    int fnFrameCounter[7] = {0,0,0,0,0,0,0};
 
     while(true) {
         cap >> captureFrameOriginal;
@@ -1087,7 +1169,7 @@ int main() {
             }
             captureFrameOriginal = captureFrame.clone();
             resize(captureFrame,captureFrame,Size(320,240));
-            cvtColor(captureFrame,captureFrameHSV,CV_RGB2HSV);
+            cvtColor(captureFrame,captureFrameHSV,CV_RGB2HSV);//http://droidsans.com/tim-cook-explain-the-need-of-battery-case-no-comment-on-design
             shownCaptureFrame = captureFrameOriginal.clone();
             if(pos[0] > -1 && pos[1] > -1) {
                 for(int i=pos[1]; i<cpos[1]; i++) {
@@ -1105,11 +1187,71 @@ int main() {
 
             circle(shownCaptureFrame,bigOutputSkeletonPos.first+bigOutputPos,1,Scalar(100,0,0),10);
             Vec3b fingerColors[] = {Vec3b(235,0,200),Vec3b(255,100,0),Vec3b(0,200,0),Vec3b(0,180,200),Vec3b(0,50,220)};
+            Vec3b white = Vec3b(255,255,255);
+            Vec3b tip = Vec3b(235,0,200);
+            Vec3b base = Vec3b(255,100,0);
+
             for(int i=0;i<outputHandPos.size();i++){
-                circle(shownCaptureFrame,outputHandPos[i].second+bigOutputPos,4,fingerColors[i]*0.6,5);
-                line(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,outputHandPos[i].second+bigOutputPos,fingerColors[i],5);
-                circle(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,4,fingerColors[i]*0.8,5);
+                circle(shownCaptureFrame,outputHandPos[i].second+bigOutputPos,4, base*0.8, 5);
+                line(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,outputHandPos[i].second+bigOutputPos, white*0.8, 5);
+                circle(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,4, tip*0.8, 5);
             }
+
+            //finger_count
+            real_finger_count = 0;
+            for(int i=0;i<outputHandPos.size();i++){
+                if (cv::norm((outputHandPos[i].first+bigOutputPos)-(outputHandPos[i].second+bigOutputPos)) > 89.0) real_finger_count++;
+            }
+            //finger_count
+
+            if (real_finger_count==3) {
+                float avgAng = getAvgFingersAngle(3,outputHandPos);
+                countFnFrame(fnFrameCounter, 1);
+            }
+
+            if (real_finger_count==4) {
+                countFnFrame(fnFrameCounter, 0);
+            }
+
+            if (real_finger_count==5) {
+                //show average angle
+                float avgAngle = getAvgFingersAngle(5, outputHandPos);
+                putText	(
+                    shownCaptureFrame,
+                    "angle: "+to_string(avgAngle),
+                    Point((int)shownCaptureFrame.cols/2, (int)shownCaptureFrame.rows*0.1),
+                    FONT_HERSHEY_PLAIN,
+                    1,
+                    Scalar(255,255,255)
+                );
+
+                //show angle for each finger
+                float fingerAngle;
+                for(int i=0; i<5; i++){
+                    fingerAngle = getFingerAngle(outputHandPos[i]);
+                    putText	(
+                        shownCaptureFrame,
+                        to_string(fingerAngle),
+                        outputHandPos[i].first+bigOutputPos,
+                        FONT_HERSHEY_PLAIN,
+                        1,
+                        Scalar(255,255,255)
+                    );
+                }
+
+                if(avgAngle > 60) countFnFrame(fnFrameCounter, 4);
+                else if(avgAngle < -30) countFnFrame(fnFrameCounter, 5);
+
+                putText	(
+                    shownCaptureFrame,
+                    "fn4: "+to_string(fnFrameCounter[4])+" | fn5: "+to_string(fnFrameCounter[5]),
+                    Point((int)shownCaptureFrame.cols/2, (int)shownCaptureFrame.rows*0.2),
+                    FONT_HERSHEY_PLAIN,
+                    1,
+                    Scalar(255,255,255)
+                );
+            }
+
             imshow("Webcam", shownCaptureFrame);
 
             Mat output = Mat(captureFrame.rows, captureFrame.cols, CV_8UC3);
@@ -1167,7 +1309,10 @@ int main() {
             //resize(bigOutput,bigOutput,Size(bigOutput.cols*2,bigOutput.rows*2));
             resize(bigOutputSkeleton,bigOutputSkeleton,Size(bigOutputSkeleton.cols*2,bigOutputSkeleton.rows*2));
             imshow("Output", bigOutputSkeleton);
-            if(waitKey(5) == 27) exit(0);
+            if(waitKey(5) == 27) {
+                exit(0);
+                break;
+            }
             if(waitKey(5) == 13) {
                 maxb.clear();
                 minb.clear();

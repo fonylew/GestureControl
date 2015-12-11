@@ -1195,32 +1195,32 @@ void countFnFrame(int fnNum){
 }
 
 //to count function frame
-queue<int> fingerq;
-int fnFrameCount[6];
-int k = 0;
-int maxFrameNumber = 30;
-
-void countFingerFrame(){
-    if(k>=maxFrameNumber){
-        int imaxxx = 0;
-        for(int i = 0;i<6;i++){
-            if(fnFrameCount[i]>fnFrameCount[imaxxx])imaxxx=i;
-        }
-        k = 0;
-        while(!fingerq.empty())fingerq.pop();
-        for(int i =0;i<6;i++){
-            fnFrameCount[i]=0;
-        }
-        cout<<"finger number: "<<imaxxx<<endl;
-        //triggerFunction(i);
-    }
-}
-void increaseFnFrame(int fnNumber){
-    fnFrameCount[fnNumber]++;
-    fingerq.push(real_finger_count);
-    k++;
-    countFingerFrame();
-}
+//queue<int> fingerq;
+//int fnFrameCount[6];
+//int k = 0;
+//int maxFrameNumber = 30;
+//
+//void countFingerFrame(){
+//    if(k>=maxFrameNumber){
+//        int imaxxx = 0;
+//        for(int i = 0;i<6;i++){
+//            if(fnFrameCount[i]>fnFrameCount[imaxxx])imaxxx=i;
+//        }
+//        k = 0;
+//        while(!fingerq.empty())fingerq.pop();
+//        for(int i =0;i<6;i++){
+//            fnFrameCount[i]=0;
+//        }
+//        cout<<"finger number: "<<imaxxx<<endl;
+//        //triggerFunction(i);
+//    }
+//}
+//void increaseFnFrame(int fnNumber){
+//    fnFrameCount[fnNumber]++;
+//    fingerq.push(real_finger_count);
+//    k++;
+//    countFingerFrame();
+//}
 
 int main() {
     initWindowsKey();

@@ -145,11 +145,24 @@ vector<Vec3b> minb;
 int real_finger_count;
 
 void myMouseCallback(int event, int x, int y, int flags, void* userdata) {
+    int tmpx,tmpy;
+
     if(event == EVENT_LBUTTONDOWN) {
         pos[0] = y;
         pos[1] = x;
     }
     if(event == EVENT_LBUTTONUP) {
+        if(x<pos[1]){
+            tmpx = x;
+            x = pos[1];
+            pos[1] = tmpx;
+        }
+        if(y<pos[0]){
+            tmpy = y;
+            y = pos[0];
+            pos[0] = tmpy;
+        }
+
         Vec3b maxc = Vec3b(0,0,0);
         Vec3b minc = Vec3b(255,255,255);
         for(int i=pos[0]/2; i<=y/2; i++) {
@@ -1151,7 +1164,7 @@ void triggerFunction(int fnNum){
 void checkFnTrigger(int fnNum){
     //adjust number of frame to count before trigger function
 
-    int frameCountRequireToTrigger[] = {15,15,1,1,10,10,40,40,15}; //last index of array is standby post
+    int frameCountRequireToTrigger[] = {15,15,1,1,10,10,15,15,15}; //last index of array is standby post
     if(fnFrameCounter[fnNum] >= frameCountRequireToTrigger[fnNum]){
         fnFrameCounter[fnNum] = 0;
         triggerFunction(fnNum);
@@ -1185,6 +1198,7 @@ int main() {
     //last frame variable
     Point lastSkeletonPos;
     vector<pair<Point,Point>> lastHandPos;
+    int error = 0;
 
     while(true) {
         cap >> captureFrameOriginal;
@@ -1281,11 +1295,15 @@ int main() {
                 //-----------
                 //use palm position
                 if(abs(lastSkeletonPos.x-bigOutputSkeletonPos.first.x) < 50
-                && bigOutputSkeletonPos.first.y>lastSkeletonPos.y + 20){
+                && bigOutputSkeletonPos.first.y-lastSkeletonPos.y>20){
                     countFnFrame(6);
                     cout<<".";
                 }else{
-                    fnFrameCounter[6]=0;
+                    error++;
+                    if(error>20){
+                        fnFrameCounter[6] = 0;
+                        error = 0;
+                    }
                     cout<<"  ";
                 }
             }

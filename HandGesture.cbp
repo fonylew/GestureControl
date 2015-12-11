@@ -48,13 +48,10 @@
 		<Linker>
 			<Add directory="C:/opencv3/build/x64/mingw/lib" />
 		</Linker>
-		<Unit filename="handGesture.cpp" />
 		<Unit filename="handGesture.hpp" />
 		<Unit filename="main.cpp" />
 		<Unit filename="main.hpp" />
-		<Unit filename="myImage.cpp" />
 		<Unit filename="myImage.hpp" />
-		<Unit filename="roi.cpp" />
 		<Unit filename="roi.hpp" />
 		<Extensions>
 			<code_completion />

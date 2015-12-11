@@ -1099,9 +1099,9 @@ int main() {
                     shownCaptureFrame.at<Vec3b>(i,cpos[1]) = Vec3b(255,255,255);
                 }
             }
-            for(int i=0; i<bounds.size(); i++) {
-                rectangle(shownCaptureFrame,Rect(bounds[i].first,bounds[i].second),colors[i],3);
-            }
+            //for(int i=0; i<bounds.size(); i++) {
+            //    rectangle(shownCaptureFrame,Rect(bounds[i].first,bounds[i].second),colors[i],3);
+            //}
 
             circle(shownCaptureFrame,bigOutputSkeletonPos.first+bigOutputPos,1,Scalar(100,0,0),10);
             Vec3b fingerColors[] = {Vec3b(235,0,200),Vec3b(255,100,0),Vec3b(0,200,0),Vec3b(0,180,200),Vec3b(0,50,220)};

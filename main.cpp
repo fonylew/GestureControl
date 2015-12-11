@@ -136,6 +136,7 @@ int pos[] =  {-2,-2};
 int cpos[] =  {-2,-2};
 vector<Vec3b> maxb;
 vector<Vec3b> minb;
+int real_finger_count;
 
 void myMouseCallback(int event, int x, int y, int flags, void* userdata) {
     if(event == EVENT_LBUTTONDOWN) {
@@ -1077,7 +1078,7 @@ void triggerFunction(int fnNum){
 
 void checkFnTrigger(int fnFrameCounter[], int fnNum){
     //adjust number of frame to count before trigger function
-    int frameCountRequireToTrigger[] = {1,1,1,1,10,10,1,1};
+    int frameCountRequireToTrigger[] = {10,10,1,1,10,10,1,1};
     if(fnFrameCounter[fnNum] >= frameCountRequireToTrigger[fnNum]){
         fnFrameCounter[fnNum] = 0;
         triggerFunction(fnNum);
@@ -1150,7 +1151,7 @@ int main() {
             }
             captureFrameOriginal = captureFrame.clone();
             resize(captureFrame,captureFrame,Size(320,240));
-            cvtColor(captureFrame,captureFrameHSV,CV_RGB2HSV);http://droidsans.com/tim-cook-explain-the-need-of-battery-case-no-comment-on-design
+            cvtColor(captureFrame,captureFrameHSV,CV_RGB2HSV);//http://droidsans.com/tim-cook-explain-the-need-of-battery-case-no-comment-on-design
             shownCaptureFrame = captureFrameOriginal.clone();
             if(pos[0] > -1 && pos[1] > -1) {
                 for(int i=pos[1]; i<cpos[1]; i++) {
@@ -1177,7 +1178,23 @@ int main() {
                 line(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,outputHandPos[i].second+bigOutputPos, white*0.8, 5);
                 circle(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,4, tip*0.8, 5);
             }
-            if(outputHandPos.size()==5){
+
+            //finger_count
+            real_finger_count = 0;
+            for(int i=0;i<outputHandPos.size();i++){
+                if (cv::norm((outputHandPos[i].first+bigOutputPos)-(outputHandPos[i].second+bigOutputPos)) > 89.0) real_finger_count++;
+            }
+            //finger_count
+
+            if (real_finger_count==3) {
+                countFnFrame(fnFrameCounter, 1);
+            }
+
+            if (real_finger_count==4) {
+                countFnFrame(fnFrameCounter, 0);
+            }
+
+            if (real_finger_count==5) {
                 //show average angle
                 float avgAngle = getAvgFingersAngle(5, outputHandPos);
                 putText	(

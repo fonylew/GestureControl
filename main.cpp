@@ -1059,7 +1059,7 @@ void auto_initialize_color_hand(){
 //    minb.push_back(Vec3b(0,0,198));
 }
 
-VideoCapture cap = VideoCapture(0);
+VideoCapture cap = VideoCapture(1);
 double fps;
 
 void calculateFPS(){
@@ -1138,14 +1138,14 @@ float getAvgFingersAngle(int fingerCount, vector<pair<Point,Point>> fingersPos){
             }
         }
     }
-    cout<<endl;
+    //cout<<endl;
     float angle = 0;
     float weightSum = 0;
     for(int i=0; i<fingerCount; i++){
         angle+=getFingerAngle(fingersPos[i]) * pointLength(fingersPos[i]);
         weightSum+=pointLength(fingersPos[i]);
     }
-    cout<<angle/weightSum<<endl;
+    //cout<<angle/weightSum<<endl;
     return angle/weightSum;
 }
 
@@ -1156,12 +1156,18 @@ void clearOtherFnFrameCount(int fnNum){
     }
 }
 
+void clearAllFnFrameCount(){
+    for(int i=0; i<8; i++)
+        fnFrameCounter[i] = 0;
+}
+
 void triggerFunction(int fnNum){
     //implement actual function here
     switch(fnNum){
         case 6:
             //fullscreen
             cout<<"-----full screen"<<endl;
+            clearAllFnFrameCount();
             break;
         case 7:
             //exit fullscreen
@@ -1189,7 +1195,7 @@ void checkFnTrigger(int fnNum){
 
 //call this when the frame meets the required condition
 void countFnFrame(int fnNum){
-    clearOtherFnFrameCount(fnNum);
+    //clearOtherFnFrameCount(fnNum);
     int temp = fnFrameCounter[fnNum];
     fnFrameCounter[fnNum] = temp+1;
     checkFnTrigger(fnNum);
@@ -1316,16 +1322,16 @@ int main() {
                 //-----------
                 //use palm position
                 if(abs(lastSkeletonPos.x-bigOutputSkeletonPos.first.x) < 50
-                && bigOutputSkeletonPos.first.y-lastSkeletonPos.y>20){
+                && lastSkeletonPos.y-bigOutputSkeletonPos.first.y>5){
                     countFnFrame(6);
-                    cout<<".";
+                    cout<<fnFrameCounter[6];
                 }else{
                     error++;
                     if(error>20){
-                        fnFrameCounter[6] = 0;
+                        clearAllFnFrameCount();
                         error = 0;
+                        cout<<"X";
                     }
-                    cout<<"  ";
                 }
             }
             /*- Last Frame -*/

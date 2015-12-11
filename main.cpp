@@ -1138,14 +1138,13 @@ float getAvgFingersAngle(int fingerCount, vector<pair<Point,Point>> fingersPos){
             }
         }
     }
-    cout<<endl;
     float angle = 0;
     float weightSum = 0;
     for(int i=0; i<fingerCount; i++){
         angle+=getFingerAngle(fingersPos[i]) * pointLength(fingersPos[i]);
         weightSum+=pointLength(fingersPos[i]);
     }
-    cout<<angle/weightSum<<endl;
+    //cout<<angle/weightSum<<endl;
     return angle/weightSum;
 }
 
@@ -1195,6 +1194,34 @@ void countFnFrame(int fnNum){
     checkFnTrigger(fnNum);
 }
 
+//to count function frame
+queue<int> fingerq;
+int fnFrameCount[6];
+int k = 0;
+int maxFrameNumber = 30;
+
+void countFingerFrame(){
+    if(k>=maxFrameNumber){
+        int imaxxx = 0;
+        for(int i = 0;i<6;i++){
+            if(fnFrameCount[i]>fnFrameCount[imaxxx])imaxxx=i;
+        }
+        k = 0;
+        while(!fingerq.empty())fingerq.pop();
+        for(int i =0;i<6;i++){
+            fnFrameCount[i]=0;
+        }
+        cout<<"finger number: "<<imaxxx<<endl;
+        //triggerFunction(i);
+    }
+}
+void increaseFnFrame(int fnNumber){
+    fnFrameCount[fnNumber]++;
+    fingerq.push(real_finger_count);
+    k++;
+    countFingerFrame();
+}
+
 int main() {
     initWindowsKey();
 
@@ -1215,6 +1242,7 @@ int main() {
     Point lastSkeletonPos;
     vector<pair<Point,Point>> lastHandPos;
     int error = 0;
+
 
     while(true) {
         cap >> captureFrameOriginal;
@@ -1257,18 +1285,21 @@ int main() {
 
             //finger_count
             real_finger_count = 0;
+
             for(int i=0;i<outputHandPos.size();i++){
                 if (cv::norm((outputHandPos[i].first+bigOutputPos)-(outputHandPos[i].second+bigOutputPos)) > 89.0) real_finger_count++;
             }
             //finger_count
+            if (real_finger_count==2) {
+                float avgAng = getAvgFingersAngle(3,outputHandPos);
+                if(avgAng>45&&avgAng<90){
+                    increaseFnFrame(3);
+                }
+                if(avgAng<-45&&avgAng>-90)increaseFnFrame(4);
+            }
 
             if (real_finger_count==3) {
-//<<<<<<< HEAD
-                float avgAng = getAvgFingersAngle(3,outputHandPos);
-                //countFnFrame(fnFrameCounter, 1);
-//=======
                 countFnFrame(1);
-//>>>>>>> bd796b114b9f8cc29ddc48fa4732e7215719c491
             }
 
             if (real_finger_count==4) {

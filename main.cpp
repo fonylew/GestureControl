@@ -1167,7 +1167,6 @@ void clearOtherFnFrameCount(int fnNum){
 void triggerFunction(int fnNum){
     //implement actual function here
     switch(fnNum){
-<<<<<<< HEAD
         case 0:
             //Play/Pause
             cout<<"Play/Pause"<<endl;
@@ -1175,13 +1174,12 @@ void triggerFunction(int fnNum){
         case 1:
             //Mute/Unmute
             cout<<"Mute/Unmute"<<endl;
-=======
+            break;
         case 2:
             cout<<"next"<<endl;
             break;
         case 3:
             cout<<"prevoius"<<endl;
->>>>>>> 1617ee2b4d961809de29e3311cefd6b336c4b940
             break;
         case 6:
             //fullscreen
@@ -1205,12 +1203,7 @@ void triggerFunction(int fnNum){
 
 void checkFnTrigger(int fnNum){
     //adjust number of frame to count before trigger function
-
-<<<<<<< HEAD
-    int frameCountRequireToTrigger[] = {10,10,1,1,10,10,15,15,10}; //last index of array is standby post
-=======
-    int frameCountRequireToTrigger[] = {15,15,15,15,10,10,15,15,15}; //last index of array is standby post
->>>>>>> 1617ee2b4d961809de29e3311cefd6b336c4b940
+    int frameCountRequireToTrigger[] = {10,10,15,15,10,10,15,15,10}; //last index of array is standby post
     if(fnFrameCounter[fnNum] >= frameCountRequireToTrigger[fnNum]){
         fnFrameCounter[fnNum] = 0;
         triggerFunction(fnNum);

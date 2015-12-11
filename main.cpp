@@ -1122,6 +1122,16 @@ float getFingerAngle(pair<Point,Point> fingerPos){
     return atan2(tipY-baseY,tipX-baseX) * 180 / M_PI + 90;
 }
 
+float getAvgFingersAngleByIndex(int startIndex, int endIndex, vector<pair<Point,Point>> fingersPos) {
+    float angle = 0;
+    float weightSum = 0;
+    for(int i=startIndex; i<=endIndex; i++){
+        angle+=getFingerAngle(fingersPos[i]) * pointLength(fingersPos[i]);
+        weightSum+=pointLength(fingersPos[i]);
+    }
+    return angle/weightSum;
+}
+
 float getAvgFingersAngle(int fingerCount, vector<pair<Point,Point>> fingersPos){
     if(fingerCount==0) return 0;
     //store index of longest fingercount fingerpos
@@ -1158,6 +1168,14 @@ void clearOtherFnFrameCount(int fnNum){
 void triggerFunction(int fnNum){
     //implement actual function here
     switch(fnNum){
+        case 0:
+            //Play/Pause
+            cout<<"Play/Pause"<<endl;
+            break;
+        case 1:
+            //Mute/Unmute
+            cout<<"Mute/Unmute"<<endl;
+            break;
         case 6:
             //fullscreen
             cout<<"-----full screen"<<endl;
@@ -1169,6 +1187,8 @@ void triggerFunction(int fnNum){
             //standby
             fnFrameCounter[0] = 0;
             fnFrameCounter[1] = 0;
+            fnFrameCounter[2] = 0;
+            fnFrameCounter[3] = 0;
             break;
         default:
             cout << "function " << fnNum << " triggered" << endl;
@@ -1179,7 +1199,7 @@ void triggerFunction(int fnNum){
 void checkFnTrigger(int fnNum){
     //adjust number of frame to count before trigger function
 
-    int frameCountRequireToTrigger[] = {15,15,1,1,10,10,15,15,15}; //last index of array is standby post
+    int frameCountRequireToTrigger[] = {10,10,1,1,10,10,15,15,10}; //last index of array is standby post
     if(fnFrameCounter[fnNum] >= frameCountRequireToTrigger[fnNum]){
         fnFrameCounter[fnNum] = 0;
         triggerFunction(fnNum);
@@ -1188,7 +1208,7 @@ void checkFnTrigger(int fnNum){
 
 //call this when the frame meets the required condition
 void countFnFrame(int fnNum){
-    clearOtherFnFrameCount(fnNum);
+    //clearOtherFnFrameCount(fnNum);
     int temp = fnFrameCounter[fnNum];
     fnFrameCounter[fnNum] = temp+1;
     checkFnTrigger(fnNum);
@@ -1299,17 +1319,19 @@ int main() {
             }
 
             if (real_finger_count==3) {
-                countFnFrame(1);
+                float angel_temp = getAvgFingersAngleByIndex(1,3,outputHandPos);
+                if (angel_temp > -10 && angel_temp < 10) countFnFrame(1);
             }
 
             if (real_finger_count==4) {
-                countFnFrame(0);
+                float angel_temp = getAvgFingersAngleByIndex(1,4,outputHandPos);
+                if (angel_temp > -10 && angel_temp < 10) countFnFrame(0);
             }
 
             if (real_finger_count==5) {
-                countFnFrame(8);
                 //show average angle
                 float avgAngle = getAvgFingersAngle(5, outputHandPos);
+                if (avgAngle > -10 && avgAngle < 20) countFnFrame(8); // for standby of post 0,1,2,3 don't remove this line!
                 putText	(
                     shownCaptureFrame,
                     "angle: "+to_string(avgAngle),

@@ -1115,6 +1115,14 @@ void press(int code){
     ip.ki.dwFlags = KEYEVENTF_KEYUP; // KEYEVENTF_KEYUP for key release
     SendInput(1, &ip, sizeof(INPUT));
 }
+void pressHex(string code){
+    unsigned int x;
+    std::stringstream ss;
+    ss << std::hex << code;
+    ss >> x;
+    press(x);
+    return;
+}
 
 float getFingerAngle(pair<Point,Point> fingerPos){
     int baseX, baseY, tipX, tipY;
@@ -1186,26 +1194,33 @@ void triggerFunction(int fnNum){
         case 0:
             //Play/Pause
             cout<<"Play/Pause"<<endl;
+            //pressHex("0xB3");
             break;
         case 1:
             //Mute/Unmute
             cout<<"Mute/Unmute"<<endl;
+            //pressHex("0xAD");
             break;
         case 2:
             cout<<"next"<<endl;
+            //pressHex("0xB0");
             break;
         case 3:
             cout<<"prevoius"<<endl;
+            //pressHex("0xB1");
             break;
         case 4:
             cout<<"volumn up"<<endl;
+            //pressHex("0xAF");
             break;
         case 5:
             cout<<"volumn down"<<endl;
+            //pressHex("0xAE");
             break;
         case 6:
             //fullscreen
             cout<<"-----full screen"<<endl;
+            //pressHex("0x7A");
             clearAllFnFrameCount();
             error_count = 0;
             break;
@@ -1300,6 +1315,22 @@ void showMode(Mat frame){
         1,
         Scalar(255,255,255)
     );
+}
+
+void showAllFingerAngle(Mat frame){
+    float fingerAngle;
+    for(int i=0; i<5; i++){
+        if(!isRealFinger[i]) continue;
+        fingerAngle = getFingerAngle(outputHandPos[i]);
+        putText	(
+            shownCaptureFrame,
+            to_string(fingerAngle),
+            outputHandPos[i].first+bigOutputPos,
+            FONT_HERSHEY_PLAIN,
+            1,
+            Scalar(255,255,255)
+        );
+    }
 }
 
 int main() {
@@ -1399,22 +1430,17 @@ int main() {
                 float avgAngle = getAvgFingersAngle(outputHandPos);
                 if (avgAngle > -10 && avgAngle < 20) countFnFrame(8); // for standby of post 0,1,2,3 don't remove this line!
 
-                //show angle for each finger
-                float fingerAngle;
-                for(int i=0; i<5; i++){
-                    fingerAngle = getFingerAngle(outputHandPos[i]);
-                    putText	(
-                        shownCaptureFrame,
-                        to_string(fingerAngle),
-                        outputHandPos[i].first+bigOutputPos,
-                        FONT_HERSHEY_PLAIN,
-                        1,
-                        Scalar(255,255,255)
-                    );
+                if(avgAngle > 45) {
+                    countFnFrame(4);
+                } else if(avgAngle > 60) {
+                    countFnFrame(4);
+                    countFnFrame(4);
+                } else if(avgAngle < -30) {
+                    countFnFrame(5);
+                } else if(avgAngle < -60) {
+                    countFnFrame(5);
+                    countFnFrame(5);
                 }
-
-                if(avgAngle > 60) countFnFrame(4);
-                else if(avgAngle < -30) countFnFrame(5);
 
                 //-----------
                 //cout<<lastSkeletonPos.y-bigOutputSkeletonPos.first.y<<" ";

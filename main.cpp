@@ -1060,6 +1060,8 @@ vector<bool> isRealFinger = {false,false,false,false,false};
 int real_finger_count;
 VideoCapture cap = VideoCapture(0);
 double fps;
+Point palmPos;
+bool isPalmPosMarked = false;
 
 void calculateFPS(){
     /* Frame Rate */
@@ -1095,6 +1097,22 @@ int findMode(vector<int> v){
     vector<int> counter (9,0);
     for(int i=0; i<v.size(); i++){counter[v[i]]++;}
     return max_element(counter.begin(), counter.end()) - counter.begin();
+}
+
+void startTrackPalm(){
+    palmPos = bigOutputSkeletonPos.first+bigOutputPos;
+    isPalmPosMarked = true;
+}
+
+void stopTrackPalm(){
+    isPalmPosMarked = false;
+}
+
+double getTrackedPalmDistance(){
+    if(isPalmPosMarked){
+        Point nowPalmPos = (bigOutputSkeletonPos.first+bigOutputPos);
+        return hypot(palmPos.x-nowPalmPos.x,palmPos.y-nowPalmPos.y);
+    } else {return 0;}
 }
 
 //Windows Key
@@ -1279,7 +1297,6 @@ void showRealFingerCount(Mat frame, int c){
         Scalar(255,255,255)
     );
 }
-
 void showAngel(Mat frame){
     putText	(
         frame,
@@ -1290,7 +1307,6 @@ void showAngel(Mat frame){
         Scalar(255,255,255)
     );
 }
-
 void showBuffer(Mat frame){
     string s;
     for(int i=0; i<fnFrameCountBuffer.size(); i++){
@@ -1305,7 +1321,6 @@ void showBuffer(Mat frame){
         Scalar(255,255,255)
     );
 }
-
 void showMode(Mat frame){
     putText	(
         frame,
@@ -1316,16 +1331,30 @@ void showMode(Mat frame){
         Scalar(255,255,255)
     );
 }
-
 void showAllFingerAngle(Mat frame){
     float fingerAngle;
     for(int i=0; i<5; i++){
         if(!isRealFinger[i]) continue;
         fingerAngle = getFingerAngle(outputHandPos[i]);
         putText	(
-            shownCaptureFrame,
+            frame,
             to_string(fingerAngle),
             outputHandPos[i].first+bigOutputPos,
+            FONT_HERSHEY_PLAIN,
+            1,
+            Scalar(255,255,255)
+        );
+    }
+}
+void showPalmTrack(Mat frame){
+    if(isPalmPosMarked){
+        Point nowPalmPos = (bigOutputSkeletonPos.first+bigOutputPos);
+        circle(frame,palmPos,1,Scalar(255,222,0),10);
+        line(shownCaptureFrame,palmPos,nowPalmPos, Scalar(255,246,184), 5);
+        putText	(
+            frame,
+            to_string(getTrackedPalmDistance()),
+            (nowPalmPos+palmPos)/2,
             FONT_HERSHEY_PLAIN,
             1,
             Scalar(255,255,255)
@@ -1400,15 +1429,19 @@ int main() {
 
             for(int i=0;i<outputHandPos.size();i++){
                 if(isRealFinger[i]){
-                    line(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,outputHandPos[i].second+bigOutputPos, white*0.8, 5);
-                    circle(shownCaptureFrame,outputHandPos[i].second+bigOutputPos,4, base*0.8, 5);
-                    circle(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,4, tip*0.8, 5);
+                    line(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,outputHandPos[i].second+bigOutputPos, white, 5);
+                    circle(shownCaptureFrame,outputHandPos[i].second+bigOutputPos,4, base, 5);
+                    circle(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,4, tip, 5);
                 } else {
-                    line(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,outputHandPos[i].second+bigOutputPos, red*0.8, 5);
+                    line(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,outputHandPos[i].second+bigOutputPos, red, 5);
                 }
             }
 
             //finger_count
+            if(real_finger_count==0) {
+                stopTrackPalm();
+            }
+
             if (real_finger_count==2) {
                 float avgAng = getAvgFingersAngle(outputHandPos);
                 if(avgAng>45&&avgAng<90)countFnFrame(2);
@@ -1426,7 +1459,6 @@ int main() {
             }
 
             if (real_finger_count==5) {
-                //show average angle
                 float avgAngle = getAvgFingersAngle(outputHandPos);
                 if (avgAngle > -10 && avgAngle < 20) countFnFrame(8); // for standby of post 0,1,2,3 don't remove this line!
 
@@ -1442,13 +1474,21 @@ int main() {
                     countFnFrame(5);
                 }
 
+                //for track hand position
+                if(!isPalmPosMarked) startTrackPalm();
+
+                if(getTrackedPalmDistance() > 100){
+                    triggerFunction(6);
+                    stopTrackPalm();
+                }
+
                 //-----------
                 //cout<<lastSkeletonPos.y-bigOutputSkeletonPos.first.y<<" ";
                 //use palm position
 
                 if(abs(lastSkeletonPos.x-bigOutputSkeletonPos.first.x) <= 170
                 && lastSkeletonPos.y-bigOutputSkeletonPos.first.y>89){
-                    countFnFrame(6);
+                    //countFnFrame(6);
                     //cout<<abs(lastSkeletonPos.x-bigOutputSkeletonPos.first.x)<<" ";
                     //cout<<"*"<<fnFrameCounter[6]<<"("<<lastSkeletonPos.y-bigOutputSkeletonPos.first.y<<") "<<endl;;
                 } else{
@@ -1475,6 +1515,8 @@ int main() {
             showBuffer(shownCaptureFrame);
             showMode(shownCaptureFrame);
             showAngel(shownCaptureFrame);
+            showPalmTrack(shownCaptureFrame);
+
             imshow("Webcam", shownCaptureFrame);
 
             Mat output = Mat(captureFrame.rows, captureFrame.cols, CV_8UC3);

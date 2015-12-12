@@ -385,7 +385,12 @@
 	<queue>
 	<time.h>
 
-1449781599 source:d:\work\onedrive\computer vision\project\gesturecontrol\main.cpp
+1449904190 source:d:\work\onedrive\computer vision\project\gesturecontrol\main.cpp
+	<windows.h>
+	<iostream>
+	<opencv2/opencv.hpp>
+	<queue>
+	<time.h>
 
 1449781599 947df16e65da31435f75e54ae1f80fed4af22
 	<iostream>

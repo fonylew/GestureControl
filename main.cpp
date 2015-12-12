@@ -1051,12 +1051,8 @@ void initialize_color_dark() {
 void auto_initialize_color_hand(){
 
     //for Ong's room light condition
-//    maxb.push_back(Vec3b(179,63,244));
-//    minb.push_back(Vec3b(0,34,141));
-//    maxb.push_back(Vec3b(179,91,204));
-//    minb.push_back(Vec3b(147,35,97));
-//    maxb.push_back(Vec3b(179,51,255));
-//    minb.push_back(Vec3b(0,0,198));
+    maxb.push_back(Vec3b(168,61,255));
+    minb.push_back(Vec3b(0,0,155));
 }
 
 VideoCapture cap = VideoCapture(0);
@@ -1092,6 +1088,12 @@ void calculateFPS(){
     cout << "Estimated frames per second : " << fps << endl;
 }
 
+int findMode(vector<int> v){
+    vector<int> counter (9,0);
+    for(int i=0; i<v.size(); i++){counter[v[i]]++;}
+    return max_element(counter.begin(), counter.end()) - counter.begin();
+}
+
 //Windows Key
 INPUT ip;
 void initWindowsKey(){
@@ -1112,6 +1114,7 @@ void press(int code){
 }
 
 int fnFrameCounter[] = {0,0,0,0,0,0,0,0,0};
+vector<int> fnFrameCountBuffer;
 
 float getFingerAngle(pair<Point,Point> fingerPos){
     int baseX, baseY, tipX, tipY;
@@ -1164,7 +1167,6 @@ void clearOtherFnFrameCount(int fnNum){
     }
 }
 
-
 void clearAllFnFrameCount(){
     for(int i=0; i<8; i++)
         fnFrameCounter[i] = 0;
@@ -1201,6 +1203,7 @@ void triggerFunction(int fnNum){
             break;
         case 8:
             //standby
+            cout<<"standby"<<endl;
             fnFrameCounter[0] = 0;
             fnFrameCounter[1] = 0;
             fnFrameCounter[2] = 0;
@@ -1222,11 +1225,58 @@ void checkFnTrigger(int fnNum){
 }
 
 //call this when the frame meets the required condition
+int BUFFER = 10;
 void countFnFrame(int fnNum){
     //clearOtherFnFrameCount(fnNum);
-    int temp = fnFrameCounter[fnNum];
-    fnFrameCounter[fnNum] = temp+1;
-    checkFnTrigger(fnNum);
+
+    //for remove noise frame
+    if(fnFrameCountBuffer.size() < BUFFER){
+        fnFrameCountBuffer.insert(fnFrameCountBuffer.begin(), fnNum);
+        return;
+    } else {
+        fnFrameCountBuffer.pop_back();
+        fnFrameCountBuffer.insert(fnFrameCountBuffer.begin(), fnNum);
+        int mode = findMode(fnFrameCountBuffer);
+        fnFrameCounter[mode]++;
+        checkFnTrigger(mode);
+    }
+}
+
+void showRealFingerCount(Mat frame, int c){
+    putText	(
+        frame,
+        "Real Finger: "+to_string(c),
+        Point((int)frame.cols/2, (int)frame.rows*0.92),
+        FONT_HERSHEY_PLAIN,
+        1,
+        Scalar(255,255,255)
+    );
+}
+
+void showBuffer(Mat frame){
+    string s;
+    for(int i=0; i<fnFrameCountBuffer.size(); i++){
+        s+=to_string(fnFrameCountBuffer[i])+" ";
+    }
+    putText	(
+        frame,
+        "buffer: "+s,
+        Point((int)frame.cols/2, (int)frame.rows*0.95),
+        FONT_HERSHEY_PLAIN,
+        1,
+        Scalar(255,255,255)
+    );
+}
+
+void showMode(Mat frame){
+    putText	(
+        frame,
+        "Mode: "+to_string(findMode(fnFrameCountBuffer)),
+        Point((int)frame.cols/2, (int)frame.rows*0.98),
+        FONT_HERSHEY_PLAIN,
+        1,
+        Scalar(255,255,255)
+    );
 }
 
 int main() {
@@ -1248,7 +1298,6 @@ int main() {
     //last frame variable
     Point lastSkeletonPos;
     vector<pair<Point,Point>> lastHandPos;
-
 
     while(true) {
         cap >> captureFrameOriginal;
@@ -1293,8 +1342,10 @@ int main() {
             real_finger_count = 0;
 
             for(int i=0;i<outputHandPos.size();i++){
-                if (cv::norm((outputHandPos[i].first+bigOutputPos)-(outputHandPos[i].second+bigOutputPos)) > 89.0) real_finger_count++;
+                if (cv::norm((outputHandPos[i].first+bigOutputPos)-(outputHandPos[i].second+bigOutputPos)) > 50) real_finger_count++;
             }
+            showRealFingerCount(shownCaptureFrame, real_finger_count);
+
             //finger_count
             if (real_finger_count==2) {
                 float avgAng = getAvgFingersAngle(2,outputHandPos);
@@ -1316,6 +1367,7 @@ int main() {
                 //show average angle
                 float avgAngle = getAvgFingersAngle(5, outputHandPos);
                 if (avgAngle > -10 && avgAngle < 20) countFnFrame(8); // for standby of post 0,1,2,3 don't remove this line!
+
                 putText	(
                     shownCaptureFrame,
                     "angle: "+to_string(avgAngle),
@@ -1358,8 +1410,8 @@ int main() {
                 && lastSkeletonPos.y-bigOutputSkeletonPos.first.y>89){
                     countFnFrame(6);
                     //cout<<abs(lastSkeletonPos.x-bigOutputSkeletonPos.first.x)<<" ";
-                    cout<<"*"<<fnFrameCounter[6]<<"("<<lastSkeletonPos.y-bigOutputSkeletonPos.first.y<<") ";
-                }else{
+                    //cout<<"*"<<fnFrameCounter[6]<<"("<<lastSkeletonPos.y-bigOutputSkeletonPos.first.y<<") "<<endl;;
+                } else{
                     //cout<<abs(lastSkeletonPos.x-bigOutputSkeletonPos.first.x)<<" ";
                     //cout<<"["<<lastSkeletonPos.y-bigOutputSkeletonPos.first.y<<"] ";
                     error_count++;
@@ -1379,6 +1431,8 @@ int main() {
                 lastHandPos[i].second += bigOutputPos;
             }
             /*--------------*/
+            showBuffer(shownCaptureFrame);
+            showMode(shownCaptureFrame);
             imshow("Webcam", shownCaptureFrame);
 
             Mat output = Mat(captureFrame.rows, captureFrame.cols, CV_8UC3);
@@ -1443,6 +1497,7 @@ int main() {
             if(waitKey(5) == 13) {
                 maxb.clear();
                 minb.clear();
+                fnFrameCountBuffer.clear();
             }
         }
     }

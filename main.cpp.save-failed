@@ -1,9 +1,3 @@
-#define WINVER 0x0500
-#include <windows.h>
-#ifdef ACCESS_MASK
-#undef ACCESS_MASK
-#endif
-
 #include <iostream>
 #include <opencv2/opencv.hpp>
 #include <queue>
@@ -142,27 +136,13 @@ int pos[] =  {-2,-2};
 int cpos[] =  {-2,-2};
 vector<Vec3b> maxb;
 vector<Vec3b> minb;
-int real_finger_count;
 
 void myMouseCallback(int event, int x, int y, int flags, void* userdata) {
-    int tmpx,tmpy;
-
     if(event == EVENT_LBUTTONDOWN) {
         pos[0] = y;
         pos[1] = x;
     }
     if(event == EVENT_LBUTTONUP) {
-        if(x<pos[1]){
-            tmpx = x;
-            x = pos[1];
-            pos[1] = tmpx;
-        }
-        if(y<pos[0]){
-            tmpy = y;
-            y = pos[0];
-            pos[0] = tmpy;
-        }
-
         Vec3b maxc = Vec3b(0,0,0);
         Vec3b minc = Vec3b(255,255,255);
         for(int i=pos[0]/2; i<=y/2; i++) {
@@ -1050,24 +1030,27 @@ void initialize_color_dark() {
 
 void auto_initialize_color_hand(){
 
-    //for Ong's room light condition
-//    maxb.push_back(Vec3b(179,63,244));
-//    minb.push_back(Vec3b(0,34,141));
-//    maxb.push_back(Vec3b(179,91,204));
-//    minb.push_back(Vec3b(147,35,97));
-//    maxb.push_back(Vec3b(179,51,255));
-//    minb.push_back(Vec3b(0,0,198));
 }
 
-VideoCapture cap = VideoCapture(0);
-double fps;
+int main() {
+    int full_screen_count=0;
 
-void calculateFPS(){
+    initialize_color();
+
+    VideoCapture cap = VideoCapture(0);
+    if(!cap.isOpened()) {
+        cout << "Failed" << endl;
+        return -1;
+    }
+    namedWindow("Webcam");
+    namedWindow("Output");
+    setMouseCallback("Webcam", myMouseCallback, NULL);
+
     /* Frame Rate */
     //double fps = cap.get(CV_CAP_PROP_FPS);
     // If you do not care about backward compatibility
     // You can use the following instead for OpenCV 3
-    fps = cap.get(CAP_PROP_FPS);
+     double fps = cap.get(CAP_PROP_FPS);
     cout << "Frames per second using cap.get(CV_CAP_PROP_FPS) : " << fps << endl;
     // Number of frames to capture
     int num_frames = 120;
@@ -1090,165 +1073,8 @@ void calculateFPS(){
     // Calculate frames per second
     fps  = num_frames / seconds;
     cout << "Estimated frames per second : " << fps << endl;
-}
 
-//Windows Key
-INPUT ip;
-void initWindowsKey(){
-    ip.type = INPUT_KEYBOARD;
-    ip.ki.wScan = 0; // hardware scan code for key
-    ip.ki.time = 0;
-    ip.ki.dwExtraInfo = 0;
-}
-void press(int code){
-    // Press the "A" key
-    ip.ki.wVk = code; // virtual-key code for the "a" key
-    ip.ki.dwFlags = 0; // 0 for key press
-    SendInput(1, &ip, sizeof(INPUT));
-
-    // Release the "A" key
-    ip.ki.dwFlags = KEYEVENTF_KEYUP; // KEYEVENTF_KEYUP for key release
-    SendInput(1, &ip, sizeof(INPUT));
-}
-
-int fnFrameCounter[] = {0,0,0,0,0,0,0,0,0};
-
-float getFingerAngle(pair<Point,Point> fingerPos){
-    int baseX, baseY, tipX, tipY;
-    tipX = fingerPos.first.x;
-    tipY = fingerPos.first.y;
-    baseX = fingerPos.second.x;
-    baseY = fingerPos.second.y;
-    return atan2(tipY-baseY,tipX-baseX) * 180 / M_PI + 90;
-}
-
-float getAvgFingersAngleByIndex(int startIndex, int endIndex, vector<pair<Point,Point>> fingersPos) {
-    float angle = 0;
-    float weightSum = 0;
-    for(int i=startIndex; i<=endIndex; i++){
-        angle+=getFingerAngle(fingersPos[i]) * pointLength(fingersPos[i]);
-        weightSum+=pointLength(fingersPos[i]);
-    }
-    return angle/weightSum;
-}
-
-float getAvgFingersAngle(int fingerCount, vector<pair<Point,Point>> fingersPos){
-    if(fingerCount==0) return 0;
-    //sort
-    float maxi[5];
-    for(int j = 0;j<5;j++){
-        maxi[j] = pointLength(fingersPos[j]);
-    }
-    for(int i =0;i<5;i++){
-        for(int j = i+1;j<5;j++){
-            if(maxi[i]<maxi[j]){
-               float temp1 = maxi[i];
-               maxi[i]=maxi[j];
-               maxi[j] = temp1;
-            }
-        }
-    }
-    float angle = 0;
-    float weightSum = 0;
-    for(int i=0; i<fingerCount; i++){
-        angle+=getFingerAngle(fingersPos[i]) * pointLength(fingersPos[i]);
-        weightSum+=pointLength(fingersPos[i]);
-    }
-    return angle/weightSum;
-}
-
-void clearOtherFnFrameCount(int fnNum){
-    for(int i=0; i<8; i++){
-        if(i==fnNum) continue;
-        else fnFrameCounter[i] = 0;
-    }
-}
-
-
-void clearAllFnFrameCount(){
-    for(int i=0; i<8; i++)
-        fnFrameCounter[i] = 0;
-}
-
-int error_count = 0;
-
-void triggerFunction(int fnNum){
-    //implement actual function here
-    switch(fnNum){
-        case 0:
-            //Play/Pause
-            cout<<"Play/Pause"<<endl;
-            break;
-        case 1:
-            //Mute/Unmute
-            cout<<"Mute/Unmute"<<endl;
-            break;
-        case 2:
-            cout<<"next"<<endl;
-            break;
-        case 3:
-            cout<<"prevoius"<<endl;
-            break;
-        case 6:
-            //fullscreen
-            cout<<"-----full screen"<<endl;
-            clearAllFnFrameCount();
-            error_count = 0;
-            break;
-        case 7:
-            //exit fullscreen
-            error_count = 0;
-            break;
-        case 8:
-            //standby
-            fnFrameCounter[0] = 0;
-            fnFrameCounter[1] = 0;
-            fnFrameCounter[2] = 0;
-            fnFrameCounter[3] = 0;
-            break;
-        default:
-            cout << "function " << fnNum << " triggered" << endl;
-            break;
-    }
-}
-
-void checkFnTrigger(int fnNum){
-    //adjust number of frame to count before trigger function
-    int frameCountRequireToTrigger[] = {10,10,15,15,10,10,15,15,10}; //last index of array is standby post
-    if(fnFrameCounter[fnNum] >= frameCountRequireToTrigger[fnNum]){
-        fnFrameCounter[fnNum] = 0;
-        triggerFunction(fnNum);
-    }
-}
-
-//call this when the frame meets the required condition
-void countFnFrame(int fnNum){
-    //clearOtherFnFrameCount(fnNum);
-    int temp = fnFrameCounter[fnNum];
-    fnFrameCounter[fnNum] = temp+1;
-    checkFnTrigger(fnNum);
-}
-
-int main() {
-    initWindowsKey();
-
-    initialize_color();
-    auto_initialize_color_hand();
-
-    if(!cap.isOpened()) {
-        cout << "Failed" << endl;
-        return -1;
-    }
-    namedWindow("Webcam");
-    namedWindow("Output");
-    setMouseCallback("Webcam", myMouseCallback, NULL);
-
-    //calculateFPS();
-
-    //last frame variable
-    Point lastSkeletonPos;
-    vector<pair<Point,Point>> lastHandPos;
-
+    /*-------- frame rate */
 
     while(true) {
         cap >> captureFrameOriginal;
@@ -1261,7 +1087,7 @@ int main() {
             }
             captureFrameOriginal = captureFrame.clone();
             resize(captureFrame,captureFrame,Size(320,240));
-            cvtColor(captureFrame,captureFrameHSV,CV_RGB2HSV);//http://droidsans.com/tim-cook-explain-the-need-of-battery-case-no-comment-on-design
+            cvtColor(captureFrame,captureFrameHSV,CV_RGB2HSV);
             shownCaptureFrame = captureFrameOriginal.clone();
             if(pos[0] > -1 && pos[1] > -1) {
                 for(int i=pos[1]; i<cpos[1]; i++) {
@@ -1279,106 +1105,11 @@ int main() {
 
             circle(shownCaptureFrame,bigOutputSkeletonPos.first+bigOutputPos,1,Scalar(100,0,0),10);
             Vec3b fingerColors[] = {Vec3b(235,0,200),Vec3b(255,100,0),Vec3b(0,200,0),Vec3b(0,180,200),Vec3b(0,50,220)};
-            Vec3b white = Vec3b(255,255,255);
-            Vec3b tip = Vec3b(235,0,200);
-            Vec3b base = Vec3b(255,100,0);
-
             for(int i=0;i<outputHandPos.size();i++){
-                circle(shownCaptureFrame,outputHandPos[i].second+bigOutputPos,4, base*0.8, 5);
-                line(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,outputHandPos[i].second+bigOutputPos, white*0.8, 5);
-                circle(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,4, tip*0.8, 5);
+                circle(shownCaptureFrame,outputHandPos[i].second+bigOutputPos,4,fingerColors[i]*0.6,5);
+                line(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,outputHandPos[i].second+bigOutputPos,fingerColors[i],5);
+                circle(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,4,fingerColors[i]*0.8,5);
             }
-
-            //finger_count
-            real_finger_count = 0;
-
-            for(int i=0;i<outputHandPos.size();i++){
-                if (cv::norm((outputHandPos[i].first+bigOutputPos)-(outputHandPos[i].second+bigOutputPos)) > 89.0) real_finger_count++;
-            }
-            //finger_count
-            if (real_finger_count==2) {
-                float avgAng = getAvgFingersAngle(2,outputHandPos);
-                if(avgAng>45&&avgAng<90)countFnFrame(2);
-                if(avgAng<-45&&avgAng>-90)countFnFrame(3);
-            }
-
-            if (real_finger_count==3) {
-                float angel_temp = getAvgFingersAngleByIndex(1,3,outputHandPos);
-                if (angel_temp > -10 && angel_temp < 10) countFnFrame(1);
-            }
-
-            if (real_finger_count==4) {
-                float angel_temp = getAvgFingersAngleByIndex(1,4,outputHandPos);
-                if (angel_temp > -10 && angel_temp < 10) countFnFrame(0);
-            }
-
-            if (real_finger_count==5) {
-                //show average angle
-                float avgAngle = getAvgFingersAngle(5, outputHandPos);
-                if (avgAngle > -10 && avgAngle < 20) countFnFrame(8); // for standby of post 0,1,2,3 don't remove this line!
-                putText	(
-                    shownCaptureFrame,
-                    "angle: "+to_string(avgAngle),
-                    Point((int)shownCaptureFrame.cols/2, (int)shownCaptureFrame.rows*0.1),
-                    FONT_HERSHEY_PLAIN,
-                    1,
-                    Scalar(255,255,255)
-                );
-
-                //show angle for each finger
-                float fingerAngle;
-                for(int i=0; i<5; i++){
-                    fingerAngle = getFingerAngle(outputHandPos[i]);
-                    putText	(
-                        shownCaptureFrame,
-                        to_string(fingerAngle),
-                        outputHandPos[i].first+bigOutputPos,
-                        FONT_HERSHEY_PLAIN,
-                        1,
-                        Scalar(255,255,255)
-                    );
-                }
-
-                if(avgAngle > 60) countFnFrame(4);
-                else if(avgAngle < -30) countFnFrame(5);
-
-                putText	(
-                    shownCaptureFrame,
-                    "fn4: "+to_string(fnFrameCounter[4])+" | fn5: "+to_string(fnFrameCounter[5]),
-                    Point((int)shownCaptureFrame.cols/2, (int)shownCaptureFrame.rows*0.2),
-                    FONT_HERSHEY_PLAIN,
-                    1,
-                    Scalar(255,255,255)
-                );
-                //-----------
-                //cout<<lastSkeletonPos.y-bigOutputSkeletonPos.first.y<<" ";
-                //use palm position
-
-                if(abs(lastSkeletonPos.x-bigOutputSkeletonPos.first.x) <= 170
-                && lastSkeletonPos.y-bigOutputSkeletonPos.first.y>89){
-                    countFnFrame(6);
-                    //cout<<abs(lastSkeletonPos.x-bigOutputSkeletonPos.first.x)<<" ";
-                    cout<<"*"<<fnFrameCounter[6]<<"("<<lastSkeletonPos.y-bigOutputSkeletonPos.first.y<<") ";
-                }else{
-                    //cout<<abs(lastSkeletonPos.x-bigOutputSkeletonPos.first.x)<<" ";
-                    //cout<<"["<<lastSkeletonPos.y-bigOutputSkeletonPos.first.y<<"] ";
-                    error_count++;
-                    if(error_count>5){
-                        //clearAllFnFrameCount();
-                        error_count = 0;
-                        //cout<<"X";
-                    }
-                    //cout<<"  ";
-                }
-            }
-            /*- Last Frame -*/
-            lastSkeletonPos = bigOutputSkeletonPos.first+bigOutputPos;
-            lastHandPos = outputHandPos;
-            for(int i=0;i<lastHandPos.size();i++){
-                lastHandPos[i].first += bigOutputPos;
-                lastHandPos[i].second += bigOutputPos;
-            }
-            /*--------------*/
             imshow("Webcam", shownCaptureFrame);
 
             Mat output = Mat(captureFrame.rows, captureFrame.cols, CV_8UC3);
@@ -1436,10 +1167,7 @@ int main() {
             //resize(bigOutput,bigOutput,Size(bigOutput.cols*2,bigOutput.rows*2));
             resize(bigOutputSkeleton,bigOutputSkeleton,Size(bigOutputSkeleton.cols*2,bigOutputSkeleton.rows*2));
             imshow("Output", bigOutputSkeleton);
-            if(waitKey(5) == 27) {
-                exit(0);
-                break;
-            }
+            if(waitKey(5) == 27) exit(0);
             if(waitKey(5) == 13) {
                 maxb.clear();
                 minb.clear();

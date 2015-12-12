@@ -1122,7 +1122,12 @@ float getFingerAngle(pair<Point,Point> fingerPos){
     tipY = fingerPos.first.y;
     baseX = fingerPos.second.x;
     baseY = fingerPos.second.y;
-    return atan2(tipY-baseY,tipX-baseX) * 180 / M_PI + 90;
+    float uncalibrateAngle = atan2(tipY-baseY,tipX-baseX) * 180 / M_PI;
+    if(uncalibrateAngle > -180 && uncalibrateAngle <= 90){
+        return uncalibrateAngle + 90;
+    } else if(uncalibrateAngle > 90 && uncalibrateAngle <= 180){
+        return uncalibrateAngle - 270;
+    }
 }
 
 float getAvgFingersAngleByIndex(int startIndex, int endIndex, vector<pair<Point,Point>> fingersPos) {

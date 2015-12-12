@@ -142,7 +142,6 @@ int pos[] =  {-2,-2};
 int cpos[] =  {-2,-2};
 vector<Vec3b> maxb;
 vector<Vec3b> minb;
-int real_finger_count;
 
 void myMouseCallback(int event, int x, int y, int flags, void* userdata) {
     int tmpx,tmpy;
@@ -1055,6 +1054,10 @@ void auto_initialize_color_hand(){
     minb.push_back(Vec3b(0,0,155));
 }
 
+int fnFrameCounter[] = {0,0,0,0,0,0,0,0,0};
+vector<int> fnFrameCountBuffer;
+vector<bool> isRealFinger = {false,false,false,false,false};
+int real_finger_count;
 VideoCapture cap = VideoCapture(0);
 double fps;
 
@@ -1113,9 +1116,6 @@ void press(int code){
     SendInput(1, &ip, sizeof(INPUT));
 }
 
-int fnFrameCounter[] = {0,0,0,0,0,0,0,0,0};
-vector<int> fnFrameCountBuffer;
-
 float getFingerAngle(pair<Point,Point> fingerPos){
     int baseX, baseY, tipX, tipY;
     tipX = fingerPos.first.x;
@@ -1135,8 +1135,8 @@ float getAvgFingersAngleByIndex(int startIndex, int endIndex, vector<pair<Point,
     return angle/weightSum;
 }
 
-float getAvgFingersAngle(int fingerCount, vector<pair<Point,Point>> fingersPos){
-    if(fingerCount==0) return 0;
+float getAvgFingersAngle(vector<pair<Point,Point>> fingersPos){
+    if(real_finger_count==0) return 0;
     //sort
     float maxi[5];
     for(int j = 0;j<5;j++){
@@ -1153,7 +1153,8 @@ float getAvgFingersAngle(int fingerCount, vector<pair<Point,Point>> fingersPos){
     }
     float angle = 0;
     float weightSum = 0;
-    for(int i=0; i<fingerCount; i++){
+    for(int i=0; i<real_finger_count; i++){
+        if(!isRealFinger[i]) continue;
         angle+=getFingerAngle(fingersPos[i]) * pointLength(fingersPos[i]);
         weightSum+=pointLength(fingersPos[i]);
     }
@@ -1190,6 +1191,12 @@ void triggerFunction(int fnNum){
             break;
         case 3:
             cout<<"prevoius"<<endl;
+            break;
+        case 4:
+            cout<<"volumn up"<<endl;
+            break;
+        case 5:
+            cout<<"volumn down"<<endl;
             break;
         case 6:
             //fullscreen
@@ -1246,6 +1253,17 @@ void showRealFingerCount(Mat frame, int c){
     putText	(
         frame,
         "Real Finger: "+to_string(c),
+        Point((int)frame.cols/2, (int)frame.rows*0.89),
+        FONT_HERSHEY_PLAIN,
+        1,
+        Scalar(255,255,255)
+    );
+}
+
+void showAngel(Mat frame){
+    putText	(
+        frame,
+        "Angle: "+to_string(getAvgFingersAngle(outputHandPos)),
         Point((int)frame.cols/2, (int)frame.rows*0.92),
         FONT_HERSHEY_PLAIN,
         1,
@@ -1329,26 +1347,34 @@ int main() {
             circle(shownCaptureFrame,bigOutputSkeletonPos.first+bigOutputPos,1,Scalar(100,0,0),10);
             Vec3b fingerColors[] = {Vec3b(235,0,200),Vec3b(255,100,0),Vec3b(0,200,0),Vec3b(0,180,200),Vec3b(0,50,220)};
             Vec3b white = Vec3b(255,255,255);
-            Vec3b tip = Vec3b(235,0,200);
-            Vec3b base = Vec3b(255,100,0);
-
-            for(int i=0;i<outputHandPos.size();i++){
-                circle(shownCaptureFrame,outputHandPos[i].second+bigOutputPos,4, base*0.8, 5);
-                line(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,outputHandPos[i].second+bigOutputPos, white*0.8, 5);
-                circle(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,4, tip*0.8, 5);
-            }
+            Vec3b tip = Vec3b(73,195,90);
+            Vec3b base = Vec3b(136,150,0);
+            Vec3b red = Vec3b(0,0,255);
 
             //finger_count
             real_finger_count = 0;
-
             for(int i=0;i<outputHandPos.size();i++){
-                if (cv::norm((outputHandPos[i].first+bigOutputPos)-(outputHandPos[i].second+bigOutputPos)) > 50) real_finger_count++;
+                isRealFinger[i] = false;
+                if (cv::norm((outputHandPos[i].first+bigOutputPos)-(outputHandPos[i].second+bigOutputPos)) > 50){
+                    real_finger_count++;
+                    isRealFinger[i] = true;
+                }
             }
             showRealFingerCount(shownCaptureFrame, real_finger_count);
 
+            for(int i=0;i<outputHandPos.size();i++){
+                if(isRealFinger[i]){
+                    line(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,outputHandPos[i].second+bigOutputPos, white*0.8, 5);
+                    circle(shownCaptureFrame,outputHandPos[i].second+bigOutputPos,4, base*0.8, 5);
+                    circle(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,4, tip*0.8, 5);
+                } else {
+                    line(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,outputHandPos[i].second+bigOutputPos, red*0.8, 5);
+                }
+            }
+
             //finger_count
             if (real_finger_count==2) {
-                float avgAng = getAvgFingersAngle(2,outputHandPos);
+                float avgAng = getAvgFingersAngle(outputHandPos);
                 if(avgAng>45&&avgAng<90)countFnFrame(2);
                 if(avgAng<-45&&avgAng>-90)countFnFrame(3);
             }
@@ -1365,17 +1391,8 @@ int main() {
 
             if (real_finger_count==5) {
                 //show average angle
-                float avgAngle = getAvgFingersAngle(5, outputHandPos);
+                float avgAngle = getAvgFingersAngle(outputHandPos);
                 if (avgAngle > -10 && avgAngle < 20) countFnFrame(8); // for standby of post 0,1,2,3 don't remove this line!
-
-                putText	(
-                    shownCaptureFrame,
-                    "angle: "+to_string(avgAngle),
-                    Point((int)shownCaptureFrame.cols/2, (int)shownCaptureFrame.rows*0.1),
-                    FONT_HERSHEY_PLAIN,
-                    1,
-                    Scalar(255,255,255)
-                );
 
                 //show angle for each finger
                 float fingerAngle;
@@ -1394,14 +1411,6 @@ int main() {
                 if(avgAngle > 60) countFnFrame(4);
                 else if(avgAngle < -30) countFnFrame(5);
 
-                putText	(
-                    shownCaptureFrame,
-                    "fn4: "+to_string(fnFrameCounter[4])+" | fn5: "+to_string(fnFrameCounter[5]),
-                    Point((int)shownCaptureFrame.cols/2, (int)shownCaptureFrame.rows*0.2),
-                    FONT_HERSHEY_PLAIN,
-                    1,
-                    Scalar(255,255,255)
-                );
                 //-----------
                 //cout<<lastSkeletonPos.y-bigOutputSkeletonPos.first.y<<" ";
                 //use palm position
@@ -1431,8 +1440,10 @@ int main() {
                 lastHandPos[i].second += bigOutputPos;
             }
             /*--------------*/
+
             showBuffer(shownCaptureFrame);
             showMode(shownCaptureFrame);
+            showAngel(shownCaptureFrame);
             imshow("Webcam", shownCaptureFrame);
 
             Mat output = Mat(captureFrame.rows, captureFrame.cols, CV_8UC3);

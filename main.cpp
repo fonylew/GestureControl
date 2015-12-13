@@ -1164,6 +1164,30 @@ bool isActiveWindowYoutube(){
     else return true;
 }
 
+bool isInTaskView(){
+    string title = getActiveWindowTitle();
+    if(title.find("Task View") == -1) return false;
+    else return true;
+}
+
+void enterTaskView(){
+    ip.ki.wVk = 91; //press win
+    ip.ki.dwFlags = 0; // 0 for key press
+    SendInput(1, &ip, sizeof(INPUT));
+
+    ip.ki.wVk = 9; //press tab
+    ip.ki.dwFlags = 0; // 0 for key press
+    SendInput(1, &ip, sizeof(INPUT));
+
+    ip.ki.wVk = 9; //release tab
+    ip.ki.dwFlags = KEYEVENTF_KEYUP; // KEYEVENTF_KEYUP for key release
+    SendInput(1, &ip, sizeof(INPUT));
+
+    ip.ki.wVk = 91; //release win
+    ip.ki.dwFlags = KEYEVENTF_KEYUP; // KEYEVENTF_KEYUP for key release
+    SendInput(1, &ip, sizeof(INPUT));
+}
+
 float getFingerAngle(pair<Point,Point> fingerPos){
     int baseX, baseY, tipX, tipY;
     tipX = fingerPos.first.x;
@@ -1229,7 +1253,6 @@ void clearAllFnFrameCount(){
 void triggerFunction(int fnNum){
     //implement actual function here
     bool isYoutube = isActiveWindowYoutube();
-    cout << "isYoutube: " << isYoutube << endl;
 
     switch(fnNum){
         case 0:
@@ -1308,7 +1331,7 @@ void triggerFunction(int fnNum){
 
 void checkFnTrigger(int fnNum){
     //adjust number of frame to count before trigger function
-    int frameCountRequireToTrigger[] = {10,10,15,15,10,10,10,10,15}; //last index of array is standby post
+    int frameCountRequireToTrigger[] = {10,10,15,15,5,5,10,10,15}; //last index of array is standby post
     if(fnFrameCounter[fnNum] >= frameCountRequireToTrigger[fnNum]){
         fnFrameCounter[fnNum] = 0;
         triggerFunction(fnNum);
@@ -1316,7 +1339,7 @@ void checkFnTrigger(int fnNum){
 }
 
 //call this when the frame meets the required condition
-int BUFFER = 10;
+int BUFFER = 7;
 void countFnFrame(int fnNum){
     //clearOtherFnFrameCount(fnNum);
 
@@ -1331,6 +1354,10 @@ void countFnFrame(int fnNum){
         fnFrameCounter[mode]++;
         checkFnTrigger(mode);
     }
+}
+
+void clearBuffer(){
+    fnFrameCountBuffer.clear();
 }
 
 void showRealFingerCount(Mat frame, int c){
@@ -1484,6 +1511,7 @@ int main() {
             //finger_count
             if(real_finger_count==0) {
                 standby = true;
+                clearBuffer();
                 stopTrackPalm();
             }
 
@@ -1526,23 +1554,58 @@ int main() {
 
                 //for track hand position
                 if(!isPalmPosMarked) startTrackPalm();
+
                 Point nowPalmPos = (bigOutputSkeletonPos.first+bigOutputPos);
                 float palmLineAngle = getFingerAngle(make_pair(nowPalmPos, palmPos));
 
-                if(cooldown<=0 && getTrackedPalmDistance() > 80 && avgAngle > -30 && avgAngle < 30 && palmLineAngle > -30 && palmLineAngle < 30){
-                    triggerFunction(6);
-                    stopTrackPalm();
-                    cooldown = 60;
-                } else if (cooldown<=0 && getTrackedPalmDistance() > 80 && avgAngle > -30 && avgAngle < 30 && (palmLineAngle < -150 || palmLineAngle > 150)){
-                    triggerFunction(7);
-                    stopTrackPalm();
-                    cooldown = 60;
-                } else if (getTrackedPalmDistance() > 50 && ((palmLineAngle <= -60 && palmLineAngle >= -120) || (palmLineAngle >= 60 && palmLineAngle <=120))){
-                    cout << "no ";
-                    stopTrackPalm();
-                } else if (avgAngle > -10 && avgAngle < 20){
-                    countFnFrame(8); // for standby of post 0,1,2,3 don't remove this line!
+                if(isInTaskView()){
+                    if(cooldown<=0 && getTrackedPalmDistance() > 80 && avgAngle > -30 && avgAngle < 30 && palmLineAngle > -30 && palmLineAngle < 30){
+                        // palm up
+                        press(13);
+                        stopTrackPalm();
+                        cooldown = 60;
+                    } else if (cooldown<=0 && getTrackedPalmDistance() > 80 && avgAngle > -30 && avgAngle < 30 && (palmLineAngle < -150 || palmLineAngle > 150)){
+                        // palm down
+
+                        stopTrackPalm();
+                    } else if (cooldown<=0 && getTrackedPalmDistance() > 50 && palmLineAngle <= -60 && palmLineAngle >= -120 ){
+                        // palm left
+                        press(37);
+                        if(getTrackedPalmDistance() > 80) cooldown = 5;
+                        else cooldown = 10;
+                    } else if (cooldown<=0 && getTrackedPalmDistance() > 50 && palmLineAngle >= 60 && palmLineAngle <=120){
+                        // palm right
+                        press(39);
+                        if(getTrackedPalmDistance() > 80) cooldown = 5;
+                        else cooldown = 10;
+                    } else if (avgAngle > -10 && avgAngle < 20){
+                        countFnFrame(8); // for standby of post 0,1,2,3 don't remove this line!
+                    }
+                } else {
+                    if(cooldown<=0 && getTrackedPalmDistance() > 80 && avgAngle > -30 && avgAngle < 30 && palmLineAngle > -30 && palmLineAngle < 30){
+                        // palm up
+                        triggerFunction(6);
+                        stopTrackPalm();
+                        cooldown = 60;
+                    } else if (cooldown<=0 && getTrackedPalmDistance() > 80 && avgAngle > -30 && avgAngle < 30 && (palmLineAngle < -150 || palmLineAngle > 150)){
+                        // palm down
+                        triggerFunction(7);
+                        stopTrackPalm();
+                        cooldown = 60;
+                    } else if (getTrackedPalmDistance() > 80 && palmLineAngle <= -60 && palmLineAngle >= -120 ){
+                        // palm left
+                        cout << "no ";
+                        stopTrackPalm();
+                    } else if (getTrackedPalmDistance() > 80 && palmLineAngle >= 60 && palmLineAngle <=120){
+                        // palm right
+                        enterTaskView();
+                        cout << "TaskView" << endl;
+                        stopTrackPalm();
+                    } else if (avgAngle > -10 && avgAngle < 20){
+                        countFnFrame(8); // for standby of post 0,1,2,3 don't remove this line!
+                    }
                 }
+
             }
 
             if(cooldown>0) cooldown--;

@@ -1462,12 +1462,12 @@ int main() {
 
             if (real_finger_count==3) {
                 float angel_temp = getAvgFingersAngleByIndex(1,3,outputHandPos);
-                if (angel_temp > -10 && angel_temp < 10) countFnFrame(1);
+                if (angel_temp > -30 && angel_temp < 30) countFnFrame(1);
             }
 
             if (real_finger_count==4) {
                 float angel_temp = getAvgFingersAngleByIndex(1,4,outputHandPos);
-                if (angel_temp > -10 && angel_temp < 10) countFnFrame(0);
+                if (angel_temp > -30 && angel_temp < 30) countFnFrame(0);
             }
 
             if (real_finger_count==5) {
@@ -1498,8 +1498,6 @@ int main() {
                     cout<<palmLineAngle<<"XXX";
                     triggerFunction(7);
                     stopTrackPalm();
-                } else if (avgAngle > -10 && avgAngle < 20){
-                    countFnFrame(8); // for standby of post 0,1,2,3 don't remove this line!
                 }
             }
 

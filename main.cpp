@@ -1204,7 +1204,6 @@ void clearAllFnFrameCount(){
         fnFrameCounter[i] = 0;
 }
 
-int error_count = 0;
 
 void triggerFunction(int fnNum){
     //implement actual function here
@@ -1213,38 +1212,49 @@ void triggerFunction(int fnNum){
             //Play/Pause
             cout<<"Play/Pause"<<endl;
             //pressHex("0xB3");
+            //pressHex("0x20"); //Youtube
             break;
         case 1:
             //Mute/Unmute
             cout<<"Mute/Unmute"<<endl;
             //pressHex("0xAD");
+            //pressHex("0x4D"); //Youtube
             break;
         case 2:
             cout<<"next"<<endl;
             //pressHex("0xB0");
+            //pressHex("0x27"); //Youtube
             break;
         case 3:
             cout<<"prevoius"<<endl;
             //pressHex("0xB1");
+            //pressHex("0x25"); //Youtube
             break;
         case 4:
             cout<<"volumn up"<<endl;
             //pressHex("0xAF");
+            //pressHex("0x26"); //Youtube
             break;
         case 5:
             cout<<"volumn down"<<endl;
             //pressHex("0xAE");
+            //pressHex("0x28"); //Youtube
             break;
         case 6:
             //fullscreen
-            cout<<"-----full screen"<<endl;
+            cout<<"full screen"<<endl;
             //pressHex("0x7A");
+            //pressHex("0x46"); //Youtube
             clearAllFnFrameCount();
-            error_count = 0;
+            stopTrackPalm();
             break;
         case 7:
             //exit fullscreen
-            error_count = 0;
+            cout<<"exit full screen"<<endl;
+            //pressHex("0x7A");
+            //pressHex("0x1B"); //Youtube
+            clearAllFnFrameCount();
+            stopTrackPalm();
             break;
         case 8:
             //standby
@@ -1253,6 +1263,7 @@ void triggerFunction(int fnNum){
             fnFrameCounter[1] = 0;
             fnFrameCounter[2] = 0;
             fnFrameCounter[3] = 0;
+            stopTrackPalm();
             break;
         default:
             cout << "function " << fnNum << " triggered" << endl;
@@ -1262,7 +1273,7 @@ void triggerFunction(int fnNum){
 
 void checkFnTrigger(int fnNum){
     //adjust number of frame to count before trigger function
-    int frameCountRequireToTrigger[] = {10,10,15,15,10,10,15,15,10}; //last index of array is standby post
+    int frameCountRequireToTrigger[] = {10,10,15,15,10,10,10,10,15}; //last index of array is standby post
     if(fnFrameCounter[fnNum] >= frameCountRequireToTrigger[fnNum]){
         fnFrameCounter[fnNum] = 0;
         triggerFunction(fnNum);
@@ -1378,10 +1389,6 @@ int main() {
 
     //calculateFPS();
 
-    //last frame variable
-    Point lastSkeletonPos;
-    vector<pair<Point,Point>> lastHandPos;
-
     while(true) {
         cap >> captureFrameOriginal;
         captureFrame = Mat(captureFrameOriginal.rows,captureFrameOriginal.cols,CV_8UC3);
@@ -1393,7 +1400,7 @@ int main() {
             }
             captureFrameOriginal = captureFrame.clone();
             resize(captureFrame,captureFrame,Size(320,240));
-            cvtColor(captureFrame,captureFrameHSV,CV_RGB2HSV);//http://droidsans.com/tim-cook-explain-the-need-of-battery-case-no-comment-on-design
+            cvtColor(captureFrame,captureFrameHSV,CV_RGB2HSV);
             shownCaptureFrame = captureFrameOriginal.clone();
             if(pos[0] > -1 && pos[1] > -1) {
                 for(int i=pos[1]; i<cpos[1]; i++) {
@@ -1442,10 +1449,15 @@ int main() {
                 stopTrackPalm();
             }
 
+            if(real_finger_count==1) {
+                stopTrackPalm();
+            }
+
             if (real_finger_count==2) {
                 float avgAng = getAvgFingersAngle(outputHandPos);
                 if(avgAng>45&&avgAng<90)countFnFrame(2);
                 if(avgAng<-45&&avgAng>-90)countFnFrame(3);
+                stopTrackPalm();
             }
 
             if (real_finger_count==3) {
@@ -1476,41 +1488,22 @@ int main() {
 
                 //for track hand position
                 if(!isPalmPosMarked) startTrackPalm();
-
-                if(getTrackedPalmDistance() > 100){
+                Point nowPalmPos = (bigOutputSkeletonPos.first+bigOutputPos);
+                float palmLineAngle = getFingerAngle(make_pair(palmPos,bigOutputSkeletonPos.first+bigOutputPos));
+                //bool isMoveUp = nowPalmPos.y < palmPos.y;
+                int isMoveUp = palmPos.y - nowPalmPos.y;
+                if(getTrackedPalmDistance() > 80 && avgAngle > -10 && avgAngle < 20 && palmLineAngle > -10 && palmLineAngle < 10 && isMoveUp >= 0){
+                    cout<<palmLineAngle<<"---";
                     triggerFunction(6);
                     stopTrackPalm();
-                }
-
-                //-----------
-                //cout<<lastSkeletonPos.y-bigOutputSkeletonPos.first.y<<" ";
-                //use palm position
-
-                if(abs(lastSkeletonPos.x-bigOutputSkeletonPos.first.x) <= 170
-                && lastSkeletonPos.y-bigOutputSkeletonPos.first.y>89){
-                    //countFnFrame(6);
-                    //cout<<abs(lastSkeletonPos.x-bigOutputSkeletonPos.first.x)<<" ";
-                    //cout<<"*"<<fnFrameCounter[6]<<"("<<lastSkeletonPos.y-bigOutputSkeletonPos.first.y<<") "<<endl;;
-                } else{
-                    //cout<<abs(lastSkeletonPos.x-bigOutputSkeletonPos.first.x)<<" ";
-                    //cout<<"["<<lastSkeletonPos.y-bigOutputSkeletonPos.first.y<<"] ";
-                    error_count++;
-                    if(error_count>5){
-                        //clearAllFnFrameCount();
-                        error_count = 0;
-                        //cout<<"X";
-                    }
-                    //cout<<"  ";
+                }else if (getTrackedPalmDistance() > 100 && avgAngle > -10 && avgAngle < 20 && palmLineAngle > -10 && palmLineAngle < 10 && isMoveUp < 0){
+                    cout<<palmLineAngle<<"X";
+                    triggerFunction(7);
+                    stopTrackPalm();
+                }else if (avgAngle > -10 && avgAngle < 20){
+                    countFnFrame(8); // for standby of post 0,1,2,3 don't remove this line!
                 }
             }
-            /*- Last Frame -*/
-            lastSkeletonPos = bigOutputSkeletonPos.first+bigOutputPos;
-            lastHandPos = outputHandPos;
-            for(int i=0;i<lastHandPos.size();i++){
-                lastHandPos[i].first += bigOutputPos;
-                lastHandPos[i].second += bigOutputPos;
-            }
-            /*--------------*/
 
             showBuffer(shownCaptureFrame);
             showMode(shownCaptureFrame);

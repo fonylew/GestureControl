@@ -1263,7 +1263,6 @@ void triggerFunction(int fnNum){
             fnFrameCounter[1] = 0;
             fnFrameCounter[2] = 0;
             fnFrameCounter[3] = 0;
-            stopTrackPalm();
             break;
         default:
             cout << "function " << fnNum << " triggered" << endl;
@@ -1360,11 +1359,12 @@ void showAllFingerAngle(Mat frame){
 void showPalmTrack(Mat frame){
     if(isPalmPosMarked){
         Point nowPalmPos = (bigOutputSkeletonPos.first+bigOutputPos);
+        float palmLineAngle = getFingerAngle(make_pair(nowPalmPos, palmPos));
         circle(frame,palmPos,1,Scalar(255,222,0),10);
         line(shownCaptureFrame,palmPos,nowPalmPos, Scalar(255,246,184), 5);
         putText	(
             frame,
-            to_string(getTrackedPalmDistance()),
+            to_string(getTrackedPalmDistance()) + " | " + to_string(palmLineAngle) + " degree",
             (nowPalmPos+palmPos)/2,
             FONT_HERSHEY_PLAIN,
             1,
@@ -1474,14 +1474,14 @@ int main() {
                 float avgAngle = getAvgFingersAngle(outputHandPos);
                 if (avgAngle > -10 && avgAngle < 20) countFnFrame(8); // for standby of post 0,1,2,3 don't remove this line!
 
-                if(avgAngle > 45) {
+                if(avgAngle > 30) {
                     countFnFrame(4);
-                } else if(avgAngle > 60) {
+                } else if(avgAngle > 45) {
                     countFnFrame(4);
                     countFnFrame(4);
                 } else if(avgAngle < -30) {
                     countFnFrame(5);
-                } else if(avgAngle < -60) {
+                } else if(avgAngle < -45) {
                     countFnFrame(5);
                     countFnFrame(5);
                 }
@@ -1489,18 +1489,16 @@ int main() {
                 //for track hand position
                 if(!isPalmPosMarked) startTrackPalm();
                 Point nowPalmPos = (bigOutputSkeletonPos.first+bigOutputPos);
-                float palmLineAngle = getFingerAngle(make_pair(palmPos,bigOutputSkeletonPos.first+bigOutputPos));
-                //bool isMoveUp = nowPalmPos.y < palmPos.y;
-                int isMoveUp = palmPos.y - nowPalmPos.y;
-                if(getTrackedPalmDistance() > 80 && avgAngle > -10 && avgAngle < 20 && palmLineAngle > -10 && palmLineAngle < 10 && isMoveUp >= 0){
+                float palmLineAngle = getFingerAngle(make_pair(nowPalmPos, palmPos));
+                if(getTrackedPalmDistance() > 50 && avgAngle > -30 && avgAngle < 30 && palmLineAngle > -30 && palmLineAngle < 30){
                     cout<<palmLineAngle<<"---";
                     triggerFunction(6);
                     stopTrackPalm();
-                }else if (getTrackedPalmDistance() > 100 && avgAngle > -10 && avgAngle < 20 && palmLineAngle > -10 && palmLineAngle < 10 && isMoveUp < 0){
-                    cout<<palmLineAngle<<"X";
+                } else if (getTrackedPalmDistance() > 50 && avgAngle > -30 && avgAngle < 30 && (palmLineAngle < -150 || palmLineAngle > 150)){
+                    cout<<palmLineAngle<<"XXX";
                     triggerFunction(7);
                     stopTrackPalm();
-                }else if (avgAngle > -10 && avgAngle < 20){
+                } else if (avgAngle > -10 && avgAngle < 20){
                     countFnFrame(8); // for standby of post 0,1,2,3 don't remove this line!
                 }
             }

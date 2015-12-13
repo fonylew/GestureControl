@@ -1151,11 +1151,17 @@ void pressHex(string code){
     return;
 }
 
-string GetActiveWindowTitle(){
+string getActiveWindowTitle(){
     char wnd_title[256];
     HWND hwnd = GetForegroundWindow(); // get handle of currently active window
     GetWindowText(hwnd,wnd_title,sizeof(wnd_title));
     return wnd_title;
+}
+
+bool isActiveWindowYoutube(){
+    string title = getActiveWindowTitle();
+    if(title.find("YouTube") == -1) return false;
+    else return true;
 }
 
 float getFingerAngle(pair<Point,Point> fingerPos){
@@ -1222,13 +1228,16 @@ void clearAllFnFrameCount(){
 
 void triggerFunction(int fnNum){
     //implement actual function here
+    bool isYoutube = isActiveWindowYoutube();
+    cout << "isYoutube: " << isYoutube << endl;
+
     switch(fnNum){
         case 0:
             //Play/Pause
             if (standby) {
                 cout<<"Play/Pause"<<endl;
-                //pressHex("0xB3");
-                //pressHex("0x20"); //Youtube
+                if(isYoutube) pressHex("0x20"); //Youtube
+                else pressHex("0xB3");
             }
             standby = false;
             break;
@@ -1236,50 +1245,49 @@ void triggerFunction(int fnNum){
             //Mute/Unmute
             if (standby) {
                 cout<<"Mute/Unmute"<<endl;
-                //pressHex("0xAD");
-                //pressHex("0x4D"); //Youtube
+                pressHex("0xAD");
             }
             standby = false;
             break;
         case 2:
             if (standby) {
                 cout<<"next"<<endl;
-                //pressHex("0xB0");
-                //pressHex("0x27"); //Youtube
+                if(isYoutube) pressHex("0x27"); //Youtube
+                else pressHex("0xB0");
             }
             standby = false;
             break;
         case 3:
             if (standby) {
                 cout<<"prevoius"<<endl;
-                //pressHex("0xB1");
-                //pressHex("0x25"); //Youtube
+                if(isYoutube) pressHex("0x25"); //Youtube
+                else pressHex("0xB1");
             }
             standby = false;
             break;
         case 4:
             cout<<"volumn up"<<endl;
-            pressHex("0xAF");
-            pressHex("0x26"); //Youtube
+            if(isYoutube) pressHex("0x26"); //Youtube
+            else pressHex("0xAF");
             break;
         case 5:
             cout<<"volumn down"<<endl;
-            pressHex("0xAE");
-            pressHex("0x28"); //Youtube
+            if(isYoutube) pressHex("0x28"); //Youtube
+            else pressHex("0xAE");
             break;
         case 6:
             //fullscreen
             cout<<"full screen"<<endl;
-            pressHex("0x7A");
-            pressHex("0x46"); //Youtube
+            if(isYoutube) pressHex("0x46"); //Youtube
+            else pressHex("0x7A");
             clearAllFnFrameCount();
             stopTrackPalm();
             break;
         case 7:
             //exit fullscreen
             cout<<"exit full screen"<<endl;
-            pressHex("0x7A");
-            pressHex("0x1B"); //Youtube
+            if(isYoutube) pressHex("0x1B"); //Youtube
+            else pressHex("0x7A");
             clearAllFnFrameCount();
             stopTrackPalm();
             break;
@@ -1474,6 +1482,7 @@ int main() {
 
             //finger_count
             if(real_finger_count==0) {
+                standby = true;
                 stopTrackPalm();
             }
 

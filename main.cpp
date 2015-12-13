@@ -1424,6 +1424,7 @@ int main() {
     setMouseCallback("Webcam", myMouseCallback, NULL);
 
     //calculateFPS();
+    int cooldown = 0;
 
     while(true) {
         cap >> captureFrameOriginal;
@@ -1527,16 +1528,24 @@ int main() {
                 if(!isPalmPosMarked) startTrackPalm();
                 Point nowPalmPos = (bigOutputSkeletonPos.first+bigOutputPos);
                 float palmLineAngle = getFingerAngle(make_pair(nowPalmPos, palmPos));
-                if(getTrackedPalmDistance() > 50 && avgAngle > -30 && avgAngle < 30 && palmLineAngle > -30 && palmLineAngle < 30){
-                    cout<<palmLineAngle<<"---";
+
+                if(cooldown<=0 && getTrackedPalmDistance() > 80 && avgAngle > -30 && avgAngle < 30 && palmLineAngle > -30 && palmLineAngle < 30){
                     triggerFunction(6);
                     stopTrackPalm();
-                } else if (getTrackedPalmDistance() > 50 && avgAngle > -30 && avgAngle < 30 && (palmLineAngle < -150 || palmLineAngle > 150)){
-                    cout<<palmLineAngle<<"XXX";
+                    cooldown = 60;
+                } else if (cooldown<=0 && getTrackedPalmDistance() > 80 && avgAngle > -30 && avgAngle < 30 && (palmLineAngle < -150 || palmLineAngle > 150)){
                     triggerFunction(7);
                     stopTrackPalm();
+                    cooldown = 60;
+                } else if (getTrackedPalmDistance() > 50 && ((palmLineAngle <= -60 && palmLineAngle >= -120) || (palmLineAngle >= 60 && palmLineAngle <=120))){
+                    cout << "no ";
+                    stopTrackPalm();
+                } else if (avgAngle > -10 && avgAngle < 20){
+                    countFnFrame(8); // for standby of post 0,1,2,3 don't remove this line!
                 }
             }
+
+            if(cooldown>0) cooldown--;
 
             showBuffer(shownCaptureFrame);
             showMode(shownCaptureFrame);

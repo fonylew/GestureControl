@@ -1054,6 +1054,7 @@ void auto_initialize_color_hand(){
     minb.push_back(Vec3b(0,0,155));
 }
 
+bool standby = false;
 int fnFrameCounter[] = {0,0,0,0,0,0,0,0,0};
 vector<int> fnFrameCountBuffer;
 vector<bool> isRealFinger = {false,false,false,false,false};
@@ -1210,25 +1211,37 @@ void triggerFunction(int fnNum){
     switch(fnNum){
         case 0:
             //Play/Pause
-            cout<<"Play/Pause"<<endl;
-            //pressHex("0xB3");
-            //pressHex("0x20"); //Youtube
+            if (standby) {
+                cout<<"Play/Pause"<<endl;
+                //pressHex("0xB3");
+                //pressHex("0x20"); //Youtube
+            }
+            standby = false;
             break;
         case 1:
             //Mute/Unmute
-            cout<<"Mute/Unmute"<<endl;
-            //pressHex("0xAD");
-            //pressHex("0x4D"); //Youtube
+            if (standby) {
+                cout<<"Mute/Unmute"<<endl;
+                //pressHex("0xAD");
+                //pressHex("0x4D"); //Youtube
+            }
+            standby = false;
             break;
         case 2:
-            cout<<"next"<<endl;
-            //pressHex("0xB0");
-            //pressHex("0x27"); //Youtube
+            if (standby) {
+                cout<<"next"<<endl;
+                //pressHex("0xB0");
+                //pressHex("0x27"); //Youtube
+            }
+            standby = false;
             break;
         case 3:
-            cout<<"prevoius"<<endl;
-            //pressHex("0xB1");
-            //pressHex("0x25"); //Youtube
+            if (standby) {
+                cout<<"prevoius"<<endl;
+                //pressHex("0xB1");
+                //pressHex("0x25"); //Youtube
+            }
+            standby = false;
             break;
         case 4:
             cout<<"volumn up"<<endl;
@@ -1263,6 +1276,7 @@ void triggerFunction(int fnNum){
             fnFrameCounter[1] = 0;
             fnFrameCounter[2] = 0;
             fnFrameCounter[3] = 0;
+            standby = true;
             break;
         default:
             cout << "function " << fnNum << " triggered" << endl;

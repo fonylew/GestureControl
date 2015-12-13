@@ -1050,10 +1050,19 @@ void initialize_color_dark() {
 void auto_initialize_color_hand(){
 
     //for Ong's room light condition
-    maxb.push_back(Vec3b(168,61,255));
-    minb.push_back(Vec3b(0,0,155));
+    maxb.push_back(Vec3b(172,51,255));
+    minb.push_back(Vec3b(140,28,146));
+    maxb.push_back(Vec3b(169,50,255));
+    minb.push_back(Vec3b(0,0,173));
+    maxb.push_back(Vec3b(179,65,225));
+    minb.push_back(Vec3b(145,32,121));
+    maxb.push_back(Vec3b(179,70,167));
+    minb.push_back(Vec3b(1,35,96));
+    maxb.push_back(Vec3b(179,66,255));
+    minb.push_back(Vec3b(0,9,107));
 }
 
+bool standby = false;
 int fnFrameCounter[] = {0,0,0,0,0,0,0,0,0};
 vector<int> fnFrameCountBuffer;
 vector<bool> isRealFinger = {false,false,false,false,false};
@@ -1142,6 +1151,13 @@ void pressHex(string code){
     return;
 }
 
+string GetActiveWindowTitle(){
+    char wnd_title[256];
+    HWND hwnd = GetForegroundWindow(); // get handle of currently active window
+    GetWindowText(hwnd,wnd_title,sizeof(wnd_title));
+    return wnd_title;
+}
+
 float getFingerAngle(pair<Point,Point> fingerPos){
     int baseX, baseY, tipX, tipY;
     tipX = fingerPos.first.x;
@@ -1204,55 +1220,66 @@ void clearAllFnFrameCount(){
         fnFrameCounter[i] = 0;
 }
 
-
 void triggerFunction(int fnNum){
     //implement actual function here
     switch(fnNum){
         case 0:
             //Play/Pause
-            cout<<"Play/Pause"<<endl;
-            //pressHex("0xB3");
-            //pressHex("0x20"); //Youtube
+            if (standby) {
+                cout<<"Play/Pause"<<endl;
+                //pressHex("0xB3");
+                //pressHex("0x20"); //Youtube
+            }
+            standby = false;
             break;
         case 1:
             //Mute/Unmute
-            cout<<"Mute/Unmute"<<endl;
-            //pressHex("0xAD");
-            //pressHex("0x4D"); //Youtube
+            if (standby) {
+                cout<<"Mute/Unmute"<<endl;
+                //pressHex("0xAD");
+                //pressHex("0x4D"); //Youtube
+            }
+            standby = false;
             break;
         case 2:
-            cout<<"next"<<endl;
-            //pressHex("0xB0");
-            //pressHex("0x27"); //Youtube
+            if (standby) {
+                cout<<"next"<<endl;
+                //pressHex("0xB0");
+                //pressHex("0x27"); //Youtube
+            }
+            standby = false;
             break;
         case 3:
-            cout<<"previous"<<endl;
-            //pressHex("0xB1");
-            //pressHex("0x25"); //Youtube
+            if (standby) {
+                cout<<"previous"<<endl;
+                //pressHex("0xB1");
+                //pressHex("0x25"); //Youtube
+            }
+            standby = false;
             break;
         case 4:
             cout<<"volume up"<<endl;
-            //pressHex("0xAF");
-            //pressHex("0x26"); //Youtube
+            pressHex("0xAF");
+            pressHex("0x26"); //Youtube
             break;
         case 5:
             cout<<"volume down"<<endl;
-            //pressHex("0xAE");
-            //pressHex("0x28"); //Youtube
+            pressHex("0xAE");
+            pressHex("0x28"); //Youtube
             break;
         case 6:
             //fullscreen
             cout<<"full screen"<<endl;
-            //pressHex("0x7A");
-            //pressHex("0x46"); //Youtube
+            pressHex("0x7A");
+            pressHex("0x46"); //Youtube
             clearAllFnFrameCount();
             stopTrackPalm();
             break;
         case 7:
             //exit fullscreen
             cout<<"exit full screen"<<endl;
-            //pressHex("0x7A");
-            //pressHex("0x1B"); //Youtube
+            pressHex("0x7A");
+            pressHex("0x1B"); //Youtube
             clearAllFnFrameCount();
             stopTrackPalm();
             break;
@@ -1263,6 +1290,7 @@ void triggerFunction(int fnNum){
             fnFrameCounter[1] = 0;
             fnFrameCounter[2] = 0;
             fnFrameCounter[3] = 0;
+            standby = true;
             break;
         default:
             cout << "function " << fnNum << " triggered" << endl;
@@ -1463,12 +1491,12 @@ int main() {
 
             if (real_finger_count==3) {
                 float angel_temp = getAvgFingersAngleByIndex(1,3,outputHandPos);
-                if (angel_temp > -10 && angel_temp < 10) countFnFrame(1);
+                if (angel_temp > -30 && angel_temp < 30) countFnFrame(1);
             }
 
             if (real_finger_count==4) {
                 float angel_temp = getAvgFingersAngleByIndex(1,4,outputHandPos);
-                if (angel_temp > -10 && angel_temp < 10) countFnFrame(0);
+                if (angel_temp > -30 && angel_temp < 30) countFnFrame(0);
             }
 
             if (real_finger_count==5) {

@@ -142,7 +142,6 @@ int pos[] =  {-2,-2};
 int cpos[] =  {-2,-2};
 vector<Vec3b> maxb;
 vector<Vec3b> minb;
-int real_finger_count;
 
 void myMouseCallback(int event, int x, int y, int flags, void* userdata) {
     int tmpx,tmpy;
@@ -1051,16 +1050,27 @@ void initialize_color_dark() {
 void auto_initialize_color_hand(){
 
     //for Ong's room light condition
-//    maxb.push_back(Vec3b(179,63,244));
-//    minb.push_back(Vec3b(0,34,141));
-//    maxb.push_back(Vec3b(179,91,204));
-//    minb.push_back(Vec3b(147,35,97));
-//    maxb.push_back(Vec3b(179,51,255));
-//    minb.push_back(Vec3b(0,0,198));
+    maxb.push_back(Vec3b(172,51,255));
+    minb.push_back(Vec3b(140,28,146));
+    maxb.push_back(Vec3b(169,50,255));
+    minb.push_back(Vec3b(0,0,173));
+    maxb.push_back(Vec3b(179,65,225));
+    minb.push_back(Vec3b(145,32,121));
+    maxb.push_back(Vec3b(179,70,167));
+    minb.push_back(Vec3b(1,35,96));
+    maxb.push_back(Vec3b(179,66,255));
+    minb.push_back(Vec3b(0,9,107));
 }
 
+bool standby = false;
+int fnFrameCounter[] = {0,0,0,0,0,0,0,0,0};
+vector<int> fnFrameCountBuffer;
+vector<bool> isRealFinger = {false,false,false,false,false};
+int real_finger_count;
 VideoCapture cap = VideoCapture(0);
 double fps;
+Point palmPos;
+bool isPalmPosMarked = false;
 
 void calculateFPS(){
     /* Frame Rate */
@@ -1092,6 +1102,28 @@ void calculateFPS(){
     cout << "Estimated frames per second : " << fps << endl;
 }
 
+int findMode(vector<int> v){
+    vector<int> counter (9,0);
+    for(int i=0; i<v.size(); i++){counter[v[i]]++;}
+    return max_element(counter.begin(), counter.end()) - counter.begin();
+}
+
+void startTrackPalm(){
+    palmPos = bigOutputSkeletonPos.first+bigOutputPos;
+    isPalmPosMarked = true;
+}
+
+void stopTrackPalm(){
+    isPalmPosMarked = false;
+}
+
+double getTrackedPalmDistance(){
+    if(isPalmPosMarked){
+        Point nowPalmPos = (bigOutputSkeletonPos.first+bigOutputPos);
+        return hypot(palmPos.x-nowPalmPos.x,palmPos.y-nowPalmPos.y);
+    } else {return 0;}
+}
+
 //Windows Key
 INPUT ip;
 void initWindowsKey(){
@@ -1110,8 +1142,51 @@ void press(int code){
     ip.ki.dwFlags = KEYEVENTF_KEYUP; // KEYEVENTF_KEYUP for key release
     SendInput(1, &ip, sizeof(INPUT));
 }
+void pressHex(string code){
+    unsigned int x;
+    std::stringstream ss;
+    ss << std::hex << code;
+    ss >> x;
+    press(x);
+    return;
+}
 
-int fnFrameCounter[] = {0,0,0,0,0,0,0,0,0};
+string getActiveWindowTitle(){
+    char wnd_title[256];
+    HWND hwnd = GetForegroundWindow(); // get handle of currently active window
+    GetWindowText(hwnd,wnd_title,sizeof(wnd_title));
+    return wnd_title;
+}
+
+bool isActiveWindowYoutube(){
+    string title = getActiveWindowTitle();
+    if(title.find("YouTube") == -1) return false;
+    else return true;
+}
+
+bool isInTaskView(){
+    string title = getActiveWindowTitle();
+    if(title.find("Task View") == -1) return false;
+    else return true;
+}
+
+void enterTaskView(){
+    ip.ki.wVk = 91; //press win
+    ip.ki.dwFlags = 0; // 0 for key press
+    SendInput(1, &ip, sizeof(INPUT));
+
+    ip.ki.wVk = 9; //press tab
+    ip.ki.dwFlags = 0; // 0 for key press
+    SendInput(1, &ip, sizeof(INPUT));
+
+    ip.ki.wVk = 9; //release tab
+    ip.ki.dwFlags = KEYEVENTF_KEYUP; // KEYEVENTF_KEYUP for key release
+    SendInput(1, &ip, sizeof(INPUT));
+
+    ip.ki.wVk = 91; //release win
+    ip.ki.dwFlags = KEYEVENTF_KEYUP; // KEYEVENTF_KEYUP for key release
+    SendInput(1, &ip, sizeof(INPUT));
+}
 
 float getFingerAngle(pair<Point,Point> fingerPos){
     int baseX, baseY, tipX, tipY;
@@ -1119,7 +1194,12 @@ float getFingerAngle(pair<Point,Point> fingerPos){
     tipY = fingerPos.first.y;
     baseX = fingerPos.second.x;
     baseY = fingerPos.second.y;
-    return atan2(tipY-baseY,tipX-baseX) * 180 / M_PI + 90;
+    float uncalibrateAngle = atan2(tipY-baseY,tipX-baseX) * 180 / M_PI;
+    if(uncalibrateAngle > -180 && uncalibrateAngle <= 90){
+        return uncalibrateAngle + 90;
+    } else if(uncalibrateAngle > 90 && uncalibrateAngle <= 180){
+        return uncalibrateAngle - 270;
+    }
 }
 
 float getAvgFingersAngleByIndex(int startIndex, int endIndex, vector<pair<Point,Point>> fingersPos) {
@@ -1132,8 +1212,8 @@ float getAvgFingersAngleByIndex(int startIndex, int endIndex, vector<pair<Point,
     return angle/weightSum;
 }
 
-float getAvgFingersAngle(int fingerCount, vector<pair<Point,Point>> fingersPos){
-    if(fingerCount==0) return 0;
+float getAvgFingersAngle(vector<pair<Point,Point>> fingersPos){
+    if(real_finger_count==0) return 0;
     //sort
     float maxi[5];
     for(int j = 0;j<5;j++){
@@ -1150,7 +1230,8 @@ float getAvgFingersAngle(int fingerCount, vector<pair<Point,Point>> fingersPos){
     }
     float angle = 0;
     float weightSum = 0;
-    for(int i=0; i<fingerCount; i++){
+    for(int i=0; i<real_finger_count; i++){
+        if(!isRealFinger[i]) continue;
         angle+=getFingerAngle(fingersPos[i]) * pointLength(fingersPos[i]);
         weightSum+=pointLength(fingersPos[i]);
     }
@@ -1164,47 +1245,83 @@ void clearOtherFnFrameCount(int fnNum){
     }
 }
 
-
 void clearAllFnFrameCount(){
     for(int i=0; i<8; i++)
         fnFrameCounter[i] = 0;
 }
 
-int error_count = 0;
-
 void triggerFunction(int fnNum){
     //implement actual function here
+    bool isYoutube = isActiveWindowYoutube();
+
     switch(fnNum){
         case 0:
             //Play/Pause
-            cout<<"Play/Pause"<<endl;
+            if (standby) {
+                cout<<"Play/Pause"<<endl;
+                if(isYoutube) pressHex("0x20"); //Youtube
+                else pressHex("0xB3");
+            }
+            standby = false;
             break;
         case 1:
             //Mute/Unmute
-            cout<<"Mute/Unmute"<<endl;
+            if (standby) {
+                cout<<"Mute/Unmute"<<endl;
+                pressHex("0xAD");
+            }
+            standby = false;
             break;
         case 2:
-            cout<<"next"<<endl;
+            if (standby) {
+                cout<<"next"<<endl;
+                if(isYoutube) pressHex("0x27"); //Youtube
+                else pressHex("0xB0");
+            }
+            standby = false;
             break;
         case 3:
-            cout<<"prevoius"<<endl;
+            if (standby) {
+                cout<<"prevoius"<<endl;
+                if(isYoutube) pressHex("0x25"); //Youtube
+                else pressHex("0xB1");
+            }
+            standby = false;
+            break;
+        case 4:
+            cout<<"volumn up"<<endl;
+            if(isYoutube) pressHex("0x26"); //Youtube
+            else pressHex("0xAF");
+            break;
+        case 5:
+            cout<<"volumn down"<<endl;
+            if(isYoutube) pressHex("0x28"); //Youtube
+            else pressHex("0xAE");
             break;
         case 6:
             //fullscreen
-            cout<<"-----full screen"<<endl;
+            cout<<"full screen"<<endl;
+            if(isYoutube) pressHex("0x46"); //Youtube
+            else pressHex("0x7A");
             clearAllFnFrameCount();
-            error_count = 0;
+            stopTrackPalm();
             break;
         case 7:
             //exit fullscreen
-            error_count = 0;
+            cout<<"exit full screen"<<endl;
+            if(isYoutube) pressHex("0x1B"); //Youtube
+            else pressHex("0x7A");
+            clearAllFnFrameCount();
+            stopTrackPalm();
             break;
         case 8:
             //standby
+            cout<<"standby"<<endl;
             fnFrameCounter[0] = 0;
             fnFrameCounter[1] = 0;
             fnFrameCounter[2] = 0;
             fnFrameCounter[3] = 0;
+            standby = true;
             break;
         default:
             cout << "function " << fnNum << " triggered" << endl;
@@ -1214,7 +1331,7 @@ void triggerFunction(int fnNum){
 
 void checkFnTrigger(int fnNum){
     //adjust number of frame to count before trigger function
-    int frameCountRequireToTrigger[] = {10,10,15,15,10,10,15,15,10}; //last index of array is standby post
+    int frameCountRequireToTrigger[] = {10,10,15,15,5,5,10,10,15}; //last index of array is standby post
     if(fnFrameCounter[fnNum] >= frameCountRequireToTrigger[fnNum]){
         fnFrameCounter[fnNum] = 0;
         triggerFunction(fnNum);
@@ -1222,11 +1339,101 @@ void checkFnTrigger(int fnNum){
 }
 
 //call this when the frame meets the required condition
+int BUFFER = 7;
 void countFnFrame(int fnNum){
     //clearOtherFnFrameCount(fnNum);
-    int temp = fnFrameCounter[fnNum];
-    fnFrameCounter[fnNum] = temp+1;
-    checkFnTrigger(fnNum);
+
+    //for remove noise frame
+    if(fnFrameCountBuffer.size() < BUFFER){
+        fnFrameCountBuffer.insert(fnFrameCountBuffer.begin(), fnNum);
+        return;
+    } else {
+        fnFrameCountBuffer.pop_back();
+        fnFrameCountBuffer.insert(fnFrameCountBuffer.begin(), fnNum);
+        int mode = findMode(fnFrameCountBuffer);
+        fnFrameCounter[mode]++;
+        checkFnTrigger(mode);
+    }
+}
+
+void clearBuffer(){
+    fnFrameCountBuffer.clear();
+}
+
+void showRealFingerCount(Mat frame, int c){
+    putText	(
+        frame,
+        "Real Finger: "+to_string(c),
+        Point((int)frame.cols/2, (int)frame.rows*0.89),
+        FONT_HERSHEY_PLAIN,
+        1,
+        Scalar(255,255,255)
+    );
+}
+void showAngel(Mat frame){
+    putText	(
+        frame,
+        "Angle: "+to_string(getAvgFingersAngle(outputHandPos)),
+        Point((int)frame.cols/2, (int)frame.rows*0.92),
+        FONT_HERSHEY_PLAIN,
+        1,
+        Scalar(255,255,255)
+    );
+}
+void showBuffer(Mat frame){
+    string s;
+    for(int i=0; i<fnFrameCountBuffer.size(); i++){
+        s+=to_string(fnFrameCountBuffer[i])+" ";
+    }
+    putText	(
+        frame,
+        "buffer: "+s,
+        Point((int)frame.cols/2, (int)frame.rows*0.95),
+        FONT_HERSHEY_PLAIN,
+        1,
+        Scalar(255,255,255)
+    );
+}
+void showMode(Mat frame){
+    putText	(
+        frame,
+        "Mode: "+to_string(findMode(fnFrameCountBuffer)),
+        Point((int)frame.cols/2, (int)frame.rows*0.98),
+        FONT_HERSHEY_PLAIN,
+        1,
+        Scalar(255,255,255)
+    );
+}
+void showAllFingerAngle(Mat frame){
+    float fingerAngle;
+    for(int i=0; i<5; i++){
+        if(!isRealFinger[i]) continue;
+        fingerAngle = getFingerAngle(outputHandPos[i]);
+        putText	(
+            frame,
+            to_string(fingerAngle),
+            outputHandPos[i].first+bigOutputPos,
+            FONT_HERSHEY_PLAIN,
+            1,
+            Scalar(255,255,255)
+        );
+    }
+}
+void showPalmTrack(Mat frame){
+    if(isPalmPosMarked){
+        Point nowPalmPos = (bigOutputSkeletonPos.first+bigOutputPos);
+        float palmLineAngle = getFingerAngle(make_pair(nowPalmPos, palmPos));
+        circle(frame,palmPos,1,Scalar(255,222,0),10);
+        line(shownCaptureFrame,palmPos,nowPalmPos, Scalar(255,246,184), 5);
+        putText	(
+            frame,
+            to_string(getTrackedPalmDistance()) + " | " + to_string(palmLineAngle) + " degree",
+            (nowPalmPos+palmPos)/2,
+            FONT_HERSHEY_PLAIN,
+            1,
+            Scalar(255,255,255)
+        );
+    }
 }
 
 int main() {
@@ -1244,11 +1451,7 @@ int main() {
     setMouseCallback("Webcam", myMouseCallback, NULL);
 
     //calculateFPS();
-
-    //last frame variable
-    Point lastSkeletonPos;
-    vector<pair<Point,Point>> lastHandPos;
-
+    int cooldown = 0;
 
     while(true) {
         cap >> captureFrameOriginal;
@@ -1261,7 +1464,7 @@ int main() {
             }
             captureFrameOriginal = captureFrame.clone();
             resize(captureFrame,captureFrame,Size(320,240));
-            cvtColor(captureFrame,captureFrameHSV,CV_RGB2HSV);//http://droidsans.com/tim-cook-explain-the-need-of-battery-case-no-comment-on-design
+            cvtColor(captureFrame,captureFrameHSV,CV_RGB2HSV);
             shownCaptureFrame = captureFrameOriginal.clone();
             if(pos[0] > -1 && pos[1] > -1) {
                 for(int i=pos[1]; i<cpos[1]; i++) {
@@ -1280,105 +1483,138 @@ int main() {
             circle(shownCaptureFrame,bigOutputSkeletonPos.first+bigOutputPos,1,Scalar(100,0,0),10);
             Vec3b fingerColors[] = {Vec3b(235,0,200),Vec3b(255,100,0),Vec3b(0,200,0),Vec3b(0,180,200),Vec3b(0,50,220)};
             Vec3b white = Vec3b(255,255,255);
-            Vec3b tip = Vec3b(235,0,200);
-            Vec3b base = Vec3b(255,100,0);
-
-            for(int i=0;i<outputHandPos.size();i++){
-                circle(shownCaptureFrame,outputHandPos[i].second+bigOutputPos,4, base*0.8, 5);
-                line(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,outputHandPos[i].second+bigOutputPos, white*0.8, 5);
-                circle(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,4, tip*0.8, 5);
-            }
+            Vec3b tip = Vec3b(73,195,90);
+            Vec3b base = Vec3b(136,150,0);
+            Vec3b red = Vec3b(0,0,255);
 
             //finger_count
             real_finger_count = 0;
+            for(int i=0;i<outputHandPos.size();i++){
+                isRealFinger[i] = false;
+                if (cv::norm((outputHandPos[i].first+bigOutputPos)-(outputHandPos[i].second+bigOutputPos)) > 50){
+                    real_finger_count++;
+                    isRealFinger[i] = true;
+                }
+            }
+            showRealFingerCount(shownCaptureFrame, real_finger_count);
 
             for(int i=0;i<outputHandPos.size();i++){
-                if (cv::norm((outputHandPos[i].first+bigOutputPos)-(outputHandPos[i].second+bigOutputPos)) > 89.0) real_finger_count++;
+                if(isRealFinger[i]){
+                    line(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,outputHandPos[i].second+bigOutputPos, white, 5);
+                    circle(shownCaptureFrame,outputHandPos[i].second+bigOutputPos,4, base, 5);
+                    circle(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,4, tip, 5);
+                } else {
+                    line(shownCaptureFrame,outputHandPos[i].first+bigOutputPos,outputHandPos[i].second+bigOutputPos, red, 5);
+                }
             }
+
             //finger_count
+            if(real_finger_count==0) {
+                standby = true;
+                clearBuffer();
+                stopTrackPalm();
+            }
+
+            if(real_finger_count==1) {
+                stopTrackPalm();
+            }
+
             if (real_finger_count==2) {
-                float avgAng = getAvgFingersAngle(2,outputHandPos);
+                float avgAng = getAvgFingersAngle(outputHandPos);
                 if(avgAng>45&&avgAng<90)countFnFrame(2);
                 if(avgAng<-45&&avgAng>-90)countFnFrame(3);
+                stopTrackPalm();
             }
 
             if (real_finger_count==3) {
                 float angel_temp = getAvgFingersAngleByIndex(1,3,outputHandPos);
-                if (angel_temp > -10 && angel_temp < 10) countFnFrame(1);
+                if (angel_temp > -30 && angel_temp < 30) countFnFrame(1);
             }
 
             if (real_finger_count==4) {
                 float angel_temp = getAvgFingersAngleByIndex(1,4,outputHandPos);
-                if (angel_temp > -10 && angel_temp < 10) countFnFrame(0);
+                if (angel_temp > -30 && angel_temp < 30) countFnFrame(0);
             }
 
             if (real_finger_count==5) {
-                //show average angle
-                float avgAngle = getAvgFingersAngle(5, outputHandPos);
+                float avgAngle = getAvgFingersAngle(outputHandPos);
                 if (avgAngle > -10 && avgAngle < 20) countFnFrame(8); // for standby of post 0,1,2,3 don't remove this line!
-                putText	(
-                    shownCaptureFrame,
-                    "angle: "+to_string(avgAngle),
-                    Point((int)shownCaptureFrame.cols/2, (int)shownCaptureFrame.rows*0.1),
-                    FONT_HERSHEY_PLAIN,
-                    1,
-                    Scalar(255,255,255)
-                );
 
-                //show angle for each finger
-                float fingerAngle;
-                for(int i=0; i<5; i++){
-                    fingerAngle = getFingerAngle(outputHandPos[i]);
-                    putText	(
-                        shownCaptureFrame,
-                        to_string(fingerAngle),
-                        outputHandPos[i].first+bigOutputPos,
-                        FONT_HERSHEY_PLAIN,
-                        1,
-                        Scalar(255,255,255)
-                    );
+                if(avgAngle > 30) {
+                    countFnFrame(4);
+                } else if(avgAngle > 45) {
+                    countFnFrame(4);
+                    countFnFrame(4);
+                } else if(avgAngle < -30) {
+                    countFnFrame(5);
+                } else if(avgAngle < -45) {
+                    countFnFrame(5);
+                    countFnFrame(5);
                 }
 
-                if(avgAngle > 60) countFnFrame(4);
-                else if(avgAngle < -30) countFnFrame(5);
+                //for track hand position
+                if(!isPalmPosMarked) startTrackPalm();
 
-                putText	(
-                    shownCaptureFrame,
-                    "fn4: "+to_string(fnFrameCounter[4])+" | fn5: "+to_string(fnFrameCounter[5]),
-                    Point((int)shownCaptureFrame.cols/2, (int)shownCaptureFrame.rows*0.2),
-                    FONT_HERSHEY_PLAIN,
-                    1,
-                    Scalar(255,255,255)
-                );
-                //-----------
-                //cout<<lastSkeletonPos.y-bigOutputSkeletonPos.first.y<<" ";
-                //use palm position
+                Point nowPalmPos = (bigOutputSkeletonPos.first+bigOutputPos);
+                float palmLineAngle = getFingerAngle(make_pair(nowPalmPos, palmPos));
 
-                if(abs(lastSkeletonPos.x-bigOutputSkeletonPos.first.x) <= 170
-                && lastSkeletonPos.y-bigOutputSkeletonPos.first.y>89){
-                    countFnFrame(6);
-                    //cout<<abs(lastSkeletonPos.x-bigOutputSkeletonPos.first.x)<<" ";
-                    cout<<"*"<<fnFrameCounter[6]<<"("<<lastSkeletonPos.y-bigOutputSkeletonPos.first.y<<") ";
-                }else{
-                    //cout<<abs(lastSkeletonPos.x-bigOutputSkeletonPos.first.x)<<" ";
-                    //cout<<"["<<lastSkeletonPos.y-bigOutputSkeletonPos.first.y<<"] ";
-                    error_count++;
-                    if(error_count>5){
-                        //clearAllFnFrameCount();
-                        error_count = 0;
-                        //cout<<"X";
+                if(isInTaskView()){
+                    if(cooldown<=0 && getTrackedPalmDistance() > 80 && avgAngle > -30 && avgAngle < 30 && palmLineAngle > -30 && palmLineAngle < 30){
+                        // palm up
+                        press(13);
+                        stopTrackPalm();
+                        cooldown = 60;
+                    } else if (cooldown<=0 && getTrackedPalmDistance() > 80 && avgAngle > -30 && avgAngle < 30 && (palmLineAngle < -150 || palmLineAngle > 150)){
+                        // palm down
+
+                        stopTrackPalm();
+                    } else if (cooldown<=0 && getTrackedPalmDistance() > 50 && palmLineAngle <= -60 && palmLineAngle >= -120 ){
+                        // palm left
+                        press(37);
+                        if(getTrackedPalmDistance() > 80) cooldown = 5;
+                        else cooldown = 10;
+                    } else if (cooldown<=0 && getTrackedPalmDistance() > 50 && palmLineAngle >= 60 && palmLineAngle <=120){
+                        // palm right
+                        press(39);
+                        if(getTrackedPalmDistance() > 80) cooldown = 5;
+                        else cooldown = 10;
+                    } else if (avgAngle > -10 && avgAngle < 20){
+                        countFnFrame(8); // for standby of post 0,1,2,3 don't remove this line!
                     }
-                    //cout<<"  ";
+                } else {
+                    if(cooldown<=0 && getTrackedPalmDistance() > 80 && avgAngle > -30 && avgAngle < 30 && palmLineAngle > -30 && palmLineAngle < 30){
+                        // palm up
+                        triggerFunction(6);
+                        stopTrackPalm();
+                        cooldown = 60;
+                    } else if (cooldown<=0 && getTrackedPalmDistance() > 80 && avgAngle > -30 && avgAngle < 30 && (palmLineAngle < -150 || palmLineAngle > 150)){
+                        // palm down
+                        triggerFunction(7);
+                        stopTrackPalm();
+                        cooldown = 60;
+                    } else if (getTrackedPalmDistance() > 80 && palmLineAngle <= -60 && palmLineAngle >= -120 ){
+                        // palm left
+                        cout << "no ";
+                        stopTrackPalm();
+                    } else if (getTrackedPalmDistance() > 80 && palmLineAngle >= 60 && palmLineAngle <=120){
+                        // palm right
+                        enterTaskView();
+                        cout << "TaskView" << endl;
+                        stopTrackPalm();
+                    } else if (avgAngle > -10 && avgAngle < 20){
+                        countFnFrame(8); // for standby of post 0,1,2,3 don't remove this line!
+                    }
                 }
+
             }
-            /*- Last Frame -*/
-            lastSkeletonPos = bigOutputSkeletonPos.first+bigOutputPos;
-            lastHandPos = outputHandPos;
-            for(int i=0;i<lastHandPos.size();i++){
-                lastHandPos[i].first += bigOutputPos;
-                lastHandPos[i].second += bigOutputPos;
-            }
-            /*--------------*/
+
+            if(cooldown>0) cooldown--;
+
+            showBuffer(shownCaptureFrame);
+            showMode(shownCaptureFrame);
+            showAngel(shownCaptureFrame);
+            showPalmTrack(shownCaptureFrame);
+
             imshow("Webcam", shownCaptureFrame);
 
             Mat output = Mat(captureFrame.rows, captureFrame.cols, CV_8UC3);
@@ -1443,6 +1679,7 @@ int main() {
             if(waitKey(5) == 13) {
                 maxb.clear();
                 minb.clear();
+                fnFrameCountBuffer.clear();
             }
         }
     }

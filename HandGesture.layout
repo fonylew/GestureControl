@@ -5,5 +5,10 @@
 		<Cursor>
 			<Cursor1 position="0" topLine="1305" />
 		</Cursor>
+		<Folding>
+			<Collapse line="810" />
+			<Collapse line="890" />
+			<Collapse line="931" />
+		</Folding>
 	</File>
 </CodeBlocks_layout_file>

@@ -1365,9 +1365,6 @@ int main() {
                     shownCaptureFrame.at<Vec3b>(i,cpos[1]) = Vec3b(255,255,255);
                 }
             }
-            //for(int i=0; i<bounds.size(); i++) {
-            //    rectangle(shownCaptureFrame,Rect(bounds[i].first,bounds[i].second),colors[i],3);
-            //}
 
             circle(shownCaptureFrame,bigOutputSkeletonPos.first+bigOutputPos,1,Scalar(100,0,0),10);
             Vec3b fingerColors[] = {Vec3b(235,0,200),Vec3b(255,100,0),Vec3b(0,200,0),Vec3b(0,180,200),Vec3b(0,50,220)};
@@ -1570,21 +1567,6 @@ int main() {
                 }
             }
             Mat output2 = output.clone();
-//            output = output2.clone();
-//            myErode(output2,output,1);
-//            output2 = output.clone();
-//            myErode(output, output2,1);
-//            output = output2.clone();
-//            myDilate(output2,output,1);
-//            bg1 = getNonBackground(captureFrameHSV);
-//            bg2 = bg1.clone();
-//            myErode(bg1,bg2,4);
-//            bg1 = bg2.clone();
-//            myErode(bg2,bg1,4);
-//            bg2 = bg1.clone();
-//            myDilate(bg1,bg2,8);
-//            bg1 = bg2.clone();
-//            myDilate(bg2,bg1,8);
             bg1 = Mat(output2.rows,output2.cols,CV_8UC3,Vec3b(255,255,255));
             bounds = myConnectedComponents(output2, output, bg1);
             Mat bigOutput;
@@ -1600,9 +1582,7 @@ int main() {
             Mat bigOutputGrad;
             bigOutputSkeletonPos = biggestCenter(bigOutput,bigOutputGrad,bigOutputSkeleton);
             outputHandPos = getHand(bigOutputSkeleton,bigOutputSkeletonPos);
-            //myDilate(bigOutputSkeleton.clone(),bigOutputSkeleton,1);
             resize(output,output,Size(640,480));
-            //resize(bigOutput,bigOutput,Size(bigOutput.cols*2,bigOutput.rows*2));
             resize(bigOutputSkeleton,bigOutputSkeleton,Size(bigOutputSkeleton.cols*2,bigOutputSkeleton.rows*2));
             imshow("Output", bigOutputSkeleton);
             if(waitKey(5) == 27) {

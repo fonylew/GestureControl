@@ -1061,14 +1061,14 @@ bool isInTaskView(){
 
 bool isInSlideShow(){
     string title = getActiveWindowTitle();
-    if(title.find("Slide Show") == -1) return false;
-    else return true;
+    if(title.find("Slide Show") != -1) return true;
+    else return false;
 }
 
 bool isInPowerPoint(){
     string title = getActiveWindowTitle();
-    if(title.find("PowerPoint") == -1) return false;
-    else return true;
+    if(title.find("PowerPoint") != -1 && title.find("Slide Show") == -1) return true;
+    else return false;
 }
 
 void enterTaskView(){
@@ -1479,9 +1479,7 @@ int main() {
                         stopTrackPalm();
                     } else if (cooldown<=0 && getTrackedPalmDistance() > 50 && palmLineAngle <= -60 && palmLineAngle >= -120 ){
                         // palm left
-                        press(37);
-                        if(getTrackedPalmDistance() > 80) cooldown = 10;
-                        else cooldown = 20;
+
                     } else if (cooldown<=0 && getTrackedPalmDistance() > 50 && palmLineAngle >= 60 && palmLineAngle <=120){
                         // palm right
                         enterTaskView();
@@ -1492,23 +1490,22 @@ int main() {
                 } else if(isInSlideShow()){
                     if(cooldown<=0 && getTrackedPalmDistance() > 80 && avgAngle > -30 && avgAngle < 30 && palmLineAngle > -30 && palmLineAngle < 30){
                         // palm up
-                        press(37);
                         stopTrackPalm();
                         cooldown = 60;
                     } else if (cooldown<=0 && getTrackedPalmDistance() > 80 && avgAngle > -30 && avgAngle < 30 && (palmLineAngle < -150 || palmLineAngle > 150)){
-                        // palm down
-
+                        // palm
+                        press(27);
                         stopTrackPalm();
                     } else if (cooldown<=0 && getTrackedPalmDistance() > 50 && palmLineAngle <= -60 && palmLineAngle >= -120 ){
                         // palm left
                         press(37);
-                        if(getTrackedPalmDistance() > 80) cooldown = 5;
-                        else cooldown = 10;
+                        if(getTrackedPalmDistance() > 80) cooldown = 10;
+                        else cooldown = 20;
                     } else if (cooldown<=0 && getTrackedPalmDistance() > 50 && palmLineAngle >= 60 && palmLineAngle <=120){
                         // palm right
                         press(39);
-                        if(getTrackedPalmDistance() > 80) cooldown = 5;
-                        else cooldown = 10;
+                        if(getTrackedPalmDistance() > 80) cooldown = 10;
+                        else cooldown = 20;
                     } else if (avgAngle > -10 && avgAngle < 20){
                         countFnFrame(8); // for standby of post 0,1,2,3 don't remove this line!
                     }

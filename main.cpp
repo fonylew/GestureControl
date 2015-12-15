@@ -808,124 +808,6 @@ Point bigOutputPos;
 pair<Point,int> bigOutputSkeletonPos;
 vector<pair<Point,Point>> outputHandPos;
 
-/*
-
-int main() {
-
-    VideoCapture cap = VideoCapture(0);
-//    cap.set(CV_CAP_PROP_FRAME_WIDTH, 640);
-//    cap.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
-    if(!cap.isOpened()) {
-        cout << "Failed" << endl;
-        return -1;
-    }
-    namedWindow("Webcam");
-    namedWindow("Output");
-    setMouseCallback("Webcam", myMouseCallback, NULL);
-    while(true) {
-        cap >> captureFrameOriginal;
-        captureFrame = Mat(captureFrameOriginal.rows,captureFrameOriginal.cols,CV_8UC3);
-        if(captureFrame.data) {
-            for(int i=0; i<captureFrame.rows; i++) {
-                for(int j=0; j<captureFrame.cols; j++) {
-                    captureFrame.at<Vec3b>(i,captureFrame.cols-j-1) = captureFrameOriginal.at<Vec3b>(i,j);
-                }
-            }
-            captureFrameOriginal = captureFrame.clone();
-            resize(captureFrame,captureFrame,Size(320,240));
-            cvtColor(captureFrame,captureFrameHSV,CV_RGB2HSV);
-            shownCaptureFrame = captureFrameOriginal.clone();
-            if(pos[0] > -1 && pos[1] > -1) {
-                for(int i=pos[1]; i<cpos[1]; i++) {
-                    shownCaptureFrame.at<Vec3b>(pos[0],i) = Vec3b(255,255,255);
-                    shownCaptureFrame.at<Vec3b>(cpos[0],i) = Vec3b(255,255,255);
-                }
-                for(int i=pos[0]; i<cpos[0]; i++) {
-                    shownCaptureFrame.at<Vec3b>(i,pos[1]) = Vec3b(255,255,255);
-                    shownCaptureFrame.at<Vec3b>(i,cpos[1]) = Vec3b(255,255,255);
-                }
-            }
-            for(int i=0; i<bounds.size(); i++) {
-                for(int t=5; t>0; t--) {
-                    for(int j=bounds[i].first.x+1; j<bounds[i].second.x; j++) {
-                        shownCaptureFrame.at<Vec3b>(min(bounds[i].first.y+t,shownCaptureFrame.rows)-1,j) = colors[i];
-                        shownCaptureFrame.at<Vec3b>(max(bounds[i].second.y-t,0),j) = colors[i];
-                    }
-                    for(int j=bounds[i].first.y; j<bounds[i].second.y; j++) {
-                        shownCaptureFrame.at<Vec3b>(j,min(bounds[i].first.x+t,shownCaptureFrame.cols-1)) = colors[i];
-                        shownCaptureFrame.at<Vec3b>(j,max(bounds[i].second.x-t,0)) = colors[i];
-                    }
-                }
-            }
-            imshow("Webcam", shownCaptureFrame);
-            Mat output = Mat(captureFrame.rows, captureFrame.cols, CV_8UC3);
-            for(int i=0; i<output.rows; i++) {
-                for(int j=0; j<output.cols; j++) {
-                    bool found = false;
-                    Vec3b c = captureFrameHSV.at<Vec3b>(i,j);
-                    for(int cc=0; cc<maxb.size(); cc++) {
-                        if(c[0] >= minb[cc][0] && c[1] >= minb[cc][1] && c[2] >= minb[cc][2] &&
-                                c[0] <= maxb[cc][0] && c[1] <= maxb[cc][1] && c[2] <= maxb[cc][2]) {
-                            found = true;
-                            break;
-                        }
-                    }
-                    if(found) {
-                        output.at<Vec3b>(i,j) = Vec3b(255,255,255);
-                    } else {
-                        output.at<Vec3b>(i,j) = Vec3b(0,0,0);
-                    }
-                }
-            }
-            Mat output2 = output.clone();
-            myErode(output,output2,5);
-            output = output2.clone();
-            myDilate(output2,output,12);
-            output2 = output.clone();
-            myErode(output, output2,7);
-//            output = output2.clone();
-//            myDilate(output2,output,1);
-            bg1 = getNonBackground(captureFrameHSV);
-            bg2 = bg1.clone();
-            myErode(bg1,bg2,4);
-            bg1 = bg2.clone();
-            myErode(bg2,bg1,4);
-            bg2 = bg1.clone();
-            myDilate(bg1,bg2,8);
-            bg1 = bg2.clone();
-            myDilate(bg2,bg1,8);
-            bg1 = Mat(output2.rows,output2.cols,CV_8UC3,Vec3b(255,255,255));
-            bounds = myConnectedComponents(output2, output, bg1);
-            for(int i=0; i<bg1.rows; i++) {
-                for(int j=0; j<bg1.cols; j++) {
-                    if(bg1.at<Vec3b>(i,j)[0] > 128 && (2*i+j)%4 == 0) {
-                        output.at<Vec3b>(i,j) = Vec3b(70,70,70);
-                    }
-                }
-            }
-            resize(output,output,Size(640,480));
-            imshow("Output", output);
-//            recognize();
-//            shownCaptureFrame2 = captureFrame.clone();
-//            for(int i=0; i<shownCaptureFrame2.rows&&avgX>-1; i++) {
-//                shownCaptureFrame2.at<Vec3b>(i,avgX) = Vec3b(150,255,150);
-//            }
-//            for(int i=0; i<shownCaptureFrame2.cols&&avgY>-1; i++) {
-//                shownCaptureFrame2.at<Vec3b>(avgY,i) = Vec3b(150,255,150);
-//            }
-//            imshow("Output2", shownCaptureFrame2);
-            if(waitKey(5) == 27) exit(0);
-            if(waitKey(5) == 13) {
-                maxb.clear();
-                minb.clear();
-            }
-        }
-    }
-    return 0;
-}
-
-*/
-
 void initialize_color() {
     maxb.push_back(Vec3b(120,125,164));
     minb.push_back(Vec3b(106,50,119));
@@ -1048,18 +930,25 @@ void initialize_color_dark() {
 }
 
 void auto_initialize_color_hand(){
+    maxb.clear();
+    minb.clear();
 
-    //for Ong's room light condition
-    maxb.push_back(Vec3b(172,51,255));
-    minb.push_back(Vec3b(140,28,146));
-    maxb.push_back(Vec3b(169,50,255));
-    minb.push_back(Vec3b(0,0,173));
-    maxb.push_back(Vec3b(179,65,225));
-    minb.push_back(Vec3b(145,32,121));
-    maxb.push_back(Vec3b(179,70,167));
-    minb.push_back(Vec3b(1,35,96));
-    maxb.push_back(Vec3b(179,66,255));
-    minb.push_back(Vec3b(0,9,107));
+    maxb.push_back(Vec3b(114,141,172));
+    minb.push_back(Vec3b(108,71,117));
+    maxb.push_back(Vec3b(114,166,193));
+    minb.push_back(Vec3b(108,96,112));
+    maxb.push_back(Vec3b(113,182,168));
+    minb.push_back(Vec3b(108,99,122));
+    maxb.push_back(Vec3b(112,140,211));
+    minb.push_back(Vec3b(108,72,142));
+    maxb.push_back(Vec3b(115,231,115));
+    minb.push_back(Vec3b(108,84,55));
+    maxb.push_back(Vec3b(115,143,186));
+    minb.push_back(Vec3b(108,72,102));
+    maxb.push_back(Vec3b(113,174,160));
+    minb.push_back(Vec3b(108,88,97));
+    maxb.push_back(Vec3b(116,157,228));
+    minb.push_back(Vec3b(108,57,107));
 }
 
 bool standby = false;
@@ -1170,6 +1059,18 @@ bool isInTaskView(){
     else return true;
 }
 
+bool isInSlideShow(){
+    string title = getActiveWindowTitle();
+    if(title.find("Slide Show") == -1) return false;
+    else return true;
+}
+
+bool isInPowerPoint(){
+    string title = getActiveWindowTitle();
+    if(title.find("PowerPoint") == -1) return false;
+    else return true;
+}
+
 void enterTaskView(){
     ip.ki.wVk = 91; //press win
     ip.ki.dwFlags = 0; // 0 for key press
@@ -1214,20 +1115,7 @@ float getAvgFingersAngleByIndex(int startIndex, int endIndex, vector<pair<Point,
 
 float getAvgFingersAngle(vector<pair<Point,Point>> fingersPos){
     if(real_finger_count==0) return 0;
-    //sort
-    float maxi[5];
-    for(int j = 0;j<5;j++){
-        maxi[j] = pointLength(fingersPos[j]);
-    }
-    for(int i =0;i<5;i++){
-        for(int j = i+1;j<5;j++){
-            if(maxi[i]<maxi[j]){
-               float temp1 = maxi[i];
-               maxi[i]=maxi[j];
-               maxi[j] = temp1;
-            }
-        }
-    }
+
     float angle = 0;
     float weightSum = 0;
     for(int i=0; i<real_finger_count; i++){
@@ -1331,7 +1219,7 @@ void triggerFunction(int fnNum){
 
 void checkFnTrigger(int fnNum){
     //adjust number of frame to count before trigger function
-    int frameCountRequireToTrigger[] = {10,10,15,15,5,5,10,10,15}; //last index of array is standby post
+    int frameCountRequireToTrigger[] = {10,10,5,5,5,5,10,10,15}; //last index of array is standby post
     if(fnFrameCounter[fnNum] >= frameCountRequireToTrigger[fnNum]){
         fnFrameCounter[fnNum] = 0;
         triggerFunction(fnNum);
@@ -1454,6 +1342,7 @@ int main() {
     int cooldown = 0;
 
     while(true) {
+
         cap >> captureFrameOriginal;
         captureFrame = Mat(captureFrameOriginal.rows,captureFrameOriginal.cols,CV_8UC3);
         if(captureFrame.data) {
@@ -1581,6 +1470,51 @@ int main() {
                     } else if (avgAngle > -10 && avgAngle < 20){
                         countFnFrame(8); // for standby of post 0,1,2,3 don't remove this line!
                     }
+                } else if(isInPowerPoint()){
+                    if(cooldown<=0 && getTrackedPalmDistance() > 80 && avgAngle > -30 && avgAngle < 30 && palmLineAngle > -30 && palmLineAngle < 30){
+                        // palm up
+                        press(116);
+                        stopTrackPalm();
+                        cooldown = 60;
+                    } else if (cooldown<=0 && getTrackedPalmDistance() > 80 && avgAngle > -30 && avgAngle < 30 && (palmLineAngle < -150 || palmLineAngle > 150)){
+                        // palm down
+                        press(27);
+                        stopTrackPalm();
+                    } else if (cooldown<=0 && getTrackedPalmDistance() > 50 && palmLineAngle <= -60 && palmLineAngle >= -120 ){
+                        // palm left
+                        press(37);
+                        if(getTrackedPalmDistance() > 80) cooldown = 10;
+                        else cooldown = 20;
+                    } else if (cooldown<=0 && getTrackedPalmDistance() > 50 && palmLineAngle >= 60 && palmLineAngle <=120){
+                        // palm right
+                        enterTaskView();
+                        cout << "TaskView" << endl;
+                    } else if (avgAngle > -10 && avgAngle < 20){
+                        countFnFrame(8); // for standby of post 0,1,2,3 don't remove this line!
+                    }
+                } else if(isInSlideShow()){
+                    if(cooldown<=0 && getTrackedPalmDistance() > 80 && avgAngle > -30 && avgAngle < 30 && palmLineAngle > -30 && palmLineAngle < 30){
+                        // palm up
+                        press(37);
+                        stopTrackPalm();
+                        cooldown = 60;
+                    } else if (cooldown<=0 && getTrackedPalmDistance() > 80 && avgAngle > -30 && avgAngle < 30 && (palmLineAngle < -150 || palmLineAngle > 150)){
+                        // palm down
+
+                        stopTrackPalm();
+                    } else if (cooldown<=0 && getTrackedPalmDistance() > 50 && palmLineAngle <= -60 && palmLineAngle >= -120 ){
+                        // palm left
+                        press(37);
+                        if(getTrackedPalmDistance() > 80) cooldown = 5;
+                        else cooldown = 10;
+                    } else if (cooldown<=0 && getTrackedPalmDistance() > 50 && palmLineAngle >= 60 && palmLineAngle <=120){
+                        // palm right
+                        press(39);
+                        if(getTrackedPalmDistance() > 80) cooldown = 5;
+                        else cooldown = 10;
+                    } else if (avgAngle > -10 && avgAngle < 20){
+                        countFnFrame(8); // for standby of post 0,1,2,3 don't remove this line!
+                    }
                 } else {
                     if(cooldown<=0 && getTrackedPalmDistance() > 80 && avgAngle > -30 && avgAngle < 30 && palmLineAngle > -30 && palmLineAngle < 30){
                         // palm up
@@ -1605,7 +1539,6 @@ int main() {
                         countFnFrame(8); // for standby of post 0,1,2,3 don't remove this line!
                     }
                 }
-
             }
 
             if(cooldown>0) cooldown--;

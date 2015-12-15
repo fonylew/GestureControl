@@ -1048,18 +1048,27 @@ void initialize_color_dark() {
 }
 
 void auto_initialize_color_hand(){
+    maxb.clear();
+    minb.clear();
 
-    //for Ong's room light condition
-    maxb.push_back(Vec3b(172,51,255));
-    minb.push_back(Vec3b(140,28,146));
-    maxb.push_back(Vec3b(169,50,255));
-    minb.push_back(Vec3b(0,0,173));
-    maxb.push_back(Vec3b(179,65,225));
-    minb.push_back(Vec3b(145,32,121));
-    maxb.push_back(Vec3b(179,70,167));
-    minb.push_back(Vec3b(1,35,96));
-    maxb.push_back(Vec3b(179,66,255));
-    minb.push_back(Vec3b(0,9,107));
+    maxb.push_back(Vec3b(117,226,148));
+    minb.push_back(Vec3b(110,112,89));
+    maxb.push_back(Vec3b(116,215,176));
+    minb.push_back(Vec3b(110,121,104));
+    maxb.push_back(Vec3b(118,234,116));
+    minb.push_back(Vec3b(108,117,74));
+    maxb.push_back(Vec3b(117,255,101));
+    minb.push_back(Vec3b(110,148,54));
+    maxb.push_back(Vec3b(118,214,146));
+    minb.push_back(Vec3b(109,116,76));
+    maxb.push_back(Vec3b(116,255,178));
+    minb.push_back(Vec3b(108,103,60));
+    maxb.push_back(Vec3b(118,175,154));
+    minb.push_back(Vec3b(109,89,91));
+    maxb.push_back(Vec3b(115,166,205));
+    minb.push_back(Vec3b(109,84,131));
+    maxb.push_back(Vec3b(116,198,227));
+    minb.push_back(Vec3b(108,94,138));
 }
 
 bool standby = false;
@@ -1170,6 +1179,18 @@ bool isInTaskView(){
     else return true;
 }
 
+bool isInSlideShow(){
+    string title = getActiveWindowTitle();
+    if(title.find("Slide Show") == -1) return false;
+    else return true;
+}
+
+bool isInPowerPoint(){
+    string title = getActiveWindowTitle();
+    if(title.find("PowerPoint") == -1) return false;
+    else return true;
+}
+
 void enterTaskView(){
     ip.ki.wVk = 91; //press win
     ip.ki.dwFlags = 0; // 0 for key press
@@ -1214,20 +1235,7 @@ float getAvgFingersAngleByIndex(int startIndex, int endIndex, vector<pair<Point,
 
 float getAvgFingersAngle(vector<pair<Point,Point>> fingersPos){
     if(real_finger_count==0) return 0;
-    //sort
-    float maxi[5];
-    for(int j = 0;j<5;j++){
-        maxi[j] = pointLength(fingersPos[j]);
-    }
-    for(int i =0;i<5;i++){
-        for(int j = i+1;j<5;j++){
-            if(maxi[i]<maxi[j]){
-               float temp1 = maxi[i];
-               maxi[i]=maxi[j];
-               maxi[j] = temp1;
-            }
-        }
-    }
+
     float angle = 0;
     float weightSum = 0;
     for(int i=0; i<real_finger_count; i++){
@@ -1454,6 +1462,7 @@ int main() {
     int cooldown = 0;
 
     while(true) {
+
         cap >> captureFrameOriginal;
         captureFrame = Mat(captureFrameOriginal.rows,captureFrameOriginal.cols,CV_8UC3);
         if(captureFrame.data) {
@@ -1562,6 +1571,52 @@ int main() {
                     if(cooldown<=0 && getTrackedPalmDistance() > 80 && avgAngle > -30 && avgAngle < 30 && palmLineAngle > -30 && palmLineAngle < 30){
                         // palm up
                         press(13);
+                        stopTrackPalm();
+                        cooldown = 60;
+                    } else if (cooldown<=0 && getTrackedPalmDistance() > 80 && avgAngle > -30 && avgAngle < 30 && (palmLineAngle < -150 || palmLineAngle > 150)){
+                        // palm down
+
+                        stopTrackPalm();
+                    } else if (cooldown<=0 && getTrackedPalmDistance() > 50 && palmLineAngle <= -60 && palmLineAngle >= -120 ){
+                        // palm left
+                        press(37);
+                        if(getTrackedPalmDistance() > 80) cooldown = 5;
+                        else cooldown = 10;
+                    } else if (cooldown<=0 && getTrackedPalmDistance() > 50 && palmLineAngle >= 60 && palmLineAngle <=120){
+                        // palm right
+                        press(39);
+                        if(getTrackedPalmDistance() > 80) cooldown = 5;
+                        else cooldown = 10;
+                    } else if (avgAngle > -10 && avgAngle < 20){
+                        countFnFrame(8); // for standby of post 0,1,2,3 don't remove this line!
+                    }
+                } else if(isInPowerPoint()){
+                    if(cooldown<=0 && getTrackedPalmDistance() > 80 && avgAngle > -30 && avgAngle < 30 && palmLineAngle > -30 && palmLineAngle < 30){
+                        // palm up
+                        press(116);
+                        stopTrackPalm();
+                        cooldown = 60;
+                    } else if (cooldown<=0 && getTrackedPalmDistance() > 80 && avgAngle > -30 && avgAngle < 30 && (palmLineAngle < -150 || palmLineAngle > 150)){
+                        // palm down
+                        press(27);
+                        stopTrackPalm();
+                    } else if (cooldown<=0 && getTrackedPalmDistance() > 50 && palmLineAngle <= -60 && palmLineAngle >= -120 ){
+                        // palm left
+                        press(37);
+                        if(getTrackedPalmDistance() > 80) cooldown = 10;
+                        else cooldown = 20;
+                    } else if (cooldown<=0 && getTrackedPalmDistance() > 50 && palmLineAngle >= 60 && palmLineAngle <=120){
+                        // palm right
+                        press(39);
+                        if(getTrackedPalmDistance() > 80) cooldown = 10;
+                        else cooldown = 20;
+                    } else if (avgAngle > -10 && avgAngle < 20){
+                        countFnFrame(8); // for standby of post 0,1,2,3 don't remove this line!
+                    }
+                } else if(isInSlideShow()){
+                    if(cooldown<=0 && getTrackedPalmDistance() > 80 && avgAngle > -30 && avgAngle < 30 && palmLineAngle > -30 && palmLineAngle < 30){
+                        // palm up
+                        press(37);
                         stopTrackPalm();
                         cooldown = 60;
                     } else if (cooldown<=0 && getTrackedPalmDistance() > 80 && avgAngle > -30 && avgAngle < 30 && (palmLineAngle < -150 || palmLineAngle > 150)){
